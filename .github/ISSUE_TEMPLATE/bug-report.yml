@@ -1,0 +1,56 @@
+name: 🐛 Bug 反馈
+description: 发现bug? 快来举报它！🐛🔍
+labels: [bug]
+body:
+  - type: input
+    attributes:
+      label: Node 版本号：
+      # description: |
+      #   你的当前复现问题的 Node 版本号
+      placeholder: |
+        使用 “node -v” 命令，在控制台得到版本号（例如：v18.14.0）
+    validations:
+      required: false
+  - type: input
+    attributes:
+      label: yuque-dl版本：
+      # description: |
+      #   你的当前复现问题 yuque-dl版本：
+      placeholder: |
+        使用 “yuque-dl -v” 命令，在控制台得到版本号
+    validations:
+      required: false
+  - type: input
+    attributes:
+      label: 操作系统：
+      placeholder: |
+        请输入你所在的操作系统(例如: Windows 10)
+    validations:
+      required: false
+  - type: input
+    attributes:
+      label: 语雀知识库的URL(选填)：
+      description: 较为隐私也可以发送至邮箱(gxr40404@gmail.com)
+      placeholder: |
+        例如: https://www.yuque.com/yuque/thyzgp
+    validations:
+      required: false
+  - type: markdown
+    attributes:
+      value: |
+        > [!WARNING]
+        > 检查是否因开启vpn导致的异常
+  - type: textarea
+    attributes:
+      label: |
+        Bug具体信息：
+      placeholder: |
+        1. 问题描述
+
+        2. 如何复现
+
+        3. 预期值
+
+        4. 实际得到的结果
+    validations:
+      required: true
