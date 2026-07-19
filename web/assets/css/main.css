@@ -98,26 +98,18 @@ textarea {
   width: 36px;
   height: 36px;
   border-radius: 12px;
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 55%, #a78bfa 100%);
+  background: #fff;
   display: grid;
   place-items: center;
-  color: #fff;
-  font-weight: 800;
-  font-size: 15px;
-  box-shadow: 0 8px 18px rgba(99, 102, 241, 0.28);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
   position: relative;
+  flex-shrink: 0;
 }
 
-.app-brand-logo::after {
-  content: "";
-  position: absolute;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #c4b5fd;
-  top: -2px;
-  right: -2px;
-  box-shadow: 0 0 0 3px #fff;
+.app-brand-logo svg {
+  width: 22px;
+  height: 22px;
+  display: block;
 }
 
 .app-brand-title {
@@ -209,6 +201,44 @@ textarea {
 .sidebar-promo-actions {
   display: flex;
   gap: 8px;
+}
+
+.promo-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 32px;
+  padding: 0 16px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: all 0.18s ease;
+  flex: 1;
+  cursor: pointer;
+  border: none;
+}
+
+.promo-btn-outline {
+  background: transparent;
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+.promo-btn-outline:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.promo-btn-primary {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+}
+
+.promo-btn-primary:hover {
+  background: linear-gradient(135deg, #818cf8 0%, #a78bfa 100%);
+  box-shadow: 0 6px 16px rgba(99, 102, 241, 0.45);
 }
 
 .app-main {
