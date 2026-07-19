@@ -30,6 +30,20 @@ export interface ICliOptions {
   hideFooter: boolean
 }
 
+/** Web / 编程调用时的下载钩子（CLI 不使用） */
+export interface IDownloadHooks {
+  onProgress?: (payload: {
+    current: number
+    total: number
+    item?: IProgressItem
+    success?: boolean
+    phase?: string
+    message?: string
+  }) => void
+  onLog?: (level: 'info' | 'warn' | 'error' | 'debug', message: string) => void
+  signal?: AbortSignal
+}
+
 export interface IServerCliOptions {
   host: boolean | string
   port: number
@@ -116,6 +130,7 @@ export interface IDownloadArticleListParams {
   host?: string
   options: ICliOptions,
   imageServiceDomains?: string[]
+  signal?: AbortSignal
 }
 
 // ---------------- ProgressBar

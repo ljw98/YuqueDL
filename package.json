@@ -20,7 +20,11 @@
     "release": "run-s clean build np changelog:gen changelog:commit",
     "test": "vitest --run",
     "test:ui": "vitest --ui --coverage.enabled=true",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "build:core": "rollup -c rollup.config.ts --configPlugin typescript",
+    "dev:web": "pnpm run build:core && pnpm --dir web dev --host 0.0.0.0 --port 8787",
+    "build:web": "pnpm run build:core && pnpm --dir web build",
+    "start:web": "pnpm --dir web preview --host 0.0.0.0 --port 8787"
   },
   "repository": {
     "type": "git",
@@ -67,6 +71,7 @@
     "axios": "^1.4.0",
     "cac": "^6.7.14",
     "cli-progress": "^3.12.0",
+    "dev": "^0.1.5",
     "log4js": "^6.9.1",
     "markdown-toc": "^1.2.0",
     "mdast-util-from-markdown": "^2.0.1",

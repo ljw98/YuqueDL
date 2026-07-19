@@ -137,3 +137,9 @@ temp
 
 /download
 /download2
+
+# web runtime data
+/data/
+web/.nuxt/
+web/.output/
+web/node_modules/

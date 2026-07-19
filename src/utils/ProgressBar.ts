@@ -2,7 +2,7 @@ import fs from 'node:fs/promises'
 import cliProgress from 'cli-progress'
 import { logger } from './log'
 
-import type { IProgress, IProgressItem } from '../types'
+import type { IDownloadHooks, IProgress, IProgressItem } from '../types'
 
 export class ProgressBar {
   bookPath: string = ''
@@ -16,13 +16,24 @@ export class ProgressBar {
   incremental: boolean
   // 是否禁用 process.json 单文档下载时禁用
   disableProgressJSON: boolean
+  hooks?: IDownloadHooks
+  silent: boolean
 
-  constructor (bookPath: string, total: number, incremental = false, disableProgressJSON = false) {
+  constructor (
+    bookPath: string,
+    total: number,
+    incremental = false,
+    disableProgressJSON = false,
+    hooks?: IDownloadHooks,
+    silent = false,
+  ) {
     this.bookPath = bookPath
     this.progressFilePath = `${bookPath}/progress.json`
     this.total = total
     this.incremental = incremental
     this.disableProgressJSON = disableProgressJSON
+    this.hooks = hooks
+    this.silent = silent
   }
 
   async init() {
@@ -36,11 +47,19 @@ export class ProgressBar {
       logger.info('根据上次数据继续断点下载')
     }
 
-    this.bar = new cliProgress.SingleBar({
-      format: 'Download [{bar}] {percentage}% | {value}/{total}',
-      // hideCursor: true
-    }, cliProgress.Presets.legacy)
-    this.bar.start(this.total, this.curr)
+    if (!this.silent) {
+      this.bar = new cliProgress.SingleBar({
+        format: 'Download [{bar}] {percentage}% | {value}/{total}',
+        // hideCursor: true
+      }, cliProgress.Presets.legacy)
+      this.bar.start(this.total, this.curr)
+    }
+    this.hooks?.onProgress?.({
+      current: this.curr,
+      total: this.total,
+      phase: 'init',
+      message: this.isDownloadInterrupted ? '断点续传' : '开始下载',
+    })
   }
 
   async getProgress(): Promise<IProgress> {
@@ -89,6 +108,14 @@ export class ProgressBar {
         console.log('')
       }
     }
+    this.hooks?.onProgress?.({
+      current: this.curr,
+      total: this.total,
+      item: progressItem,
+      success: isSuccess,
+      phase: 'item',
+      message: progressItem.path,
+    })
   }
   // 暂停进度条的打印
   pause () {
@@ -96,6 +123,7 @@ export class ProgressBar {
   }
   // 继续进度条的打印
   continue() {
+    if (this.silent) return
     this.clearLine(2)
     this.bar?.start(this.total, this.curr)
   }

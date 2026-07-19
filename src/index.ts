@@ -6,13 +6,16 @@ import { fixPath } from './parse/fix'
 import { ProgressBar, colorize, isValidUrl, logger } from './utils'
 import { downloadArticleList } from './download/list'
 
-import type { ICliOptions, IProgressItem } from './types'
+import type { ICliOptions, IDownloadHooks, IProgressItem } from './types'
 import { downloadArticle } from './download/article'
 import { DEFAULT_DOMAIN } from './constant'
 
-export async function main(url: string, options: ICliOptions) {
+export async function main(url: string, options: ICliOptions, hooks?: IDownloadHooks) {
   if (!isValidUrl(url)) {
     throw new Error('Please enter a valid URL')
+  }
+  if (hooks?.signal?.aborted) {
+    throw new Error('Download aborted')
   }
 
   // 明确传入公开密码知识库的密码
@@ -46,7 +49,8 @@ export async function main(url: string, options: ICliOptions) {
   await mkdir(bookPath, {recursive: true})
 
   const total = tocList.length
-  const progressBar = new ProgressBar(bookPath, total, options.incremental)
+  const silent = Boolean(hooks)
+  const progressBar = new ProgressBar(bookPath, total, options.incremental, false, hooks, silent)
   await progressBar.init()
 
   // 为了检查是否有增量数据
@@ -54,7 +58,9 @@ export async function main(url: string, options: ICliOptions) {
   if (!options.incremental && progressBar.curr == total) {
     if (progressBar.bar) progressBar.bar.stop()
     logger.info(`√ 已完成: ${bookPath}`)
-    return
+    hooks?.onLog?.('info', `已完成: ${bookPath}`)
+    hooks?.onProgress?.({ current: total, total, phase: 'done', message: bookPath })
+    return { bookPath, bookName: bookName || String(bookId) }
   }
 
   const uuidMap = new Map<string, IProgressItem>()
@@ -79,7 +85,8 @@ export async function main(url: string, options: ICliOptions) {
     progressBar,
     host,
     options,
-    imageServiceDomains
+    imageServiceDomains,
+    signal: hooks?.signal,
   })
 
   // 生成目录
@@ -91,10 +98,19 @@ export async function main(url: string, options: ICliOptions) {
   })
   await summary.genFile()
   logger.info(`√ 生成目录 ${path.resolve(bookPath, 'index.md')}`)
+  hooks?.onLog?.('info', `生成目录 ${path.resolve(bookPath, 'index.md')}`)
 
   if (progressBar.curr === total) {
     logger.info(`√ 已完成: ${bookPath}`)
+    hooks?.onLog?.('info', `已完成: ${bookPath}`)
   }
+  hooks?.onProgress?.({
+    current: progressBar.curr,
+    total,
+    phase: 'done',
+    message: bookPath,
+  })
+  return { bookPath, bookName: bookName || String(bookId) }
 }
 
 /** 批量下载多个知识库 */

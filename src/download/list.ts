@@ -26,7 +26,8 @@ export async function downloadArticleList(params: IDownloadArticleListParams) {
     progressBar,
     host,
     options,
-    imageServiceDomains = []
+    imageServiceDomains = [],
+    signal,
   } = params
   let errArticleCount = 0
   let totalArticleCount = 0
@@ -35,6 +36,9 @@ export async function downloadArticleList(params: IDownloadArticleListParams) {
   const warnArticleInfo = []
   const updateDownloadList: IUpdateDownloadItem[] = []
   for (let i = 0; i < total; i++) {
+    if (signal?.aborted) {
+      throw new Error('Download aborted')
+    }
     const item = tocList[i]
     if (typeof item.type !== 'string') continue
     // if (uuidMap.get(item.uuid)) continue
