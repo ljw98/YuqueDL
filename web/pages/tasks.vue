@@ -77,12 +77,13 @@
             <el-button
               v-if="row.status === 'failed' || row.status === 'cancelled'"
               size="small"
-              type="primary"
+              type="warning"
               @click="retry(row.id)"
             >
               重试
             </el-button>
             <el-button size="small" @click="showDetail(row)">详情</el-button>
+            <el-button size="small" type="danger" @click="remove(row.id)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -167,6 +168,16 @@ async function retry(id: string) {
 function showDetail(row: any) {
   current.value = row
   drawer.value = true
+}
+
+async function remove(id: string) {
+  try {
+    await $fetch(`/api/tasks/${id}`, { method: 'DELETE' })
+    ElMessage.success('已删除')
+    await refresh()
+  } catch (e: any) {
+    ElMessage.error(e?.data?.statusMessage || e?.message || '删除失败')
+  }
 }
 
 onMounted(refresh)
