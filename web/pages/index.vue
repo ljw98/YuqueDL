@@ -32,7 +32,7 @@
 
     <div class="panel" style="max-width:720px;">
       <h3 class="panel-title">新建任务</h3>
-      <el-form label-position="top" @submit.prevent>
+      <el-form label-position="top" @submit.prevent style="max-width:680px;">
         <el-form-item label="下载模式">
           <div class="mode-segmented">
             <el-segmented v-model="form.type" :options="[
