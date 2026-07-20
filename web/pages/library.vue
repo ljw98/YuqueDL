@@ -15,7 +15,7 @@
           v-model="currentBook"
           placeholder="选择知识库"
           style="width:100%;margin-bottom:14px;flex:0 0 auto;"
-          filterable
+          :filterable="false"
           @change="onBookChange"
         >
           <el-option v-for="b in books" :key="b.path" :label="b.name" :value="b.path" />
