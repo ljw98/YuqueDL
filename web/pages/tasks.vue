@@ -60,21 +60,22 @@
           <template #default="{ row }">
             <el-button
               v-if="row.status === 'running' || row.status === 'queued'"
-              link
-              type="warning"
+              size="small"
+              round
               @click="cancel(row.id)"
             >
               取消
             </el-button>
             <el-button
               v-if="row.status === 'failed' || row.status === 'cancelled'"
-              link
-              type="success"
+              size="small"
+              round
+              type="primary"
               @click="retry(row.id)"
             >
               重试
             </el-button>
-            <el-button link type="primary" @click="showDetail(row)">详情</el-button>
+            <el-button size="small" round @click="showDetail(row)">详情</el-button>
           </template>
         </el-table-column>
       </el-table>
