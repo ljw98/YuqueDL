@@ -35,12 +35,12 @@
       <h3 class="panel-title">新建任务</h3>
       <el-form label-position="top" @submit.prevent>
         <el-form-item label="下载模式">
-          <el-radio-group v-model="form.type">
-            <el-radio-button value="book">整库</el-radio-button>
-            <el-radio-button value="docs">单/多文档</el-radio-button>
-            <el-radio-button value="batch">批量知识库</el-radio-button>
-            <el-radio-button value="user">账号全部</el-radio-button>
-          </el-radio-group>
+          <el-segmented v-model="form.type" :options="[
+            { label: '整库', value: 'book' },
+            { label: '单/多文档', value: 'docs' },
+            { label: '批量知识库', value: 'batch' },
+            { label: '账号全部', value: 'user' },
+          ]" />
         </el-form-item>
 
         <el-form-item v-if="form.type !== 'user'" :label="urlLabel">
