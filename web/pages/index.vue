@@ -319,13 +319,17 @@ onBeforeUnmount(closeEs)
 </script>
 
 <style scoped>
-.mode-segmented .el-segmented {
+.mode-segmented :deep(.el-segmented) {
   --el-segmented-item-selected-color: #fff;
   --el-segmented-item-selected-bg-color: #31cc79;
   --el-border-radius-base: 16px;
-  --el-segmented-item-height: 44px;
 }
-.mode-segmented .el-segmented__item.is-selected {
+.mode-segmented :deep(.el-segmented__item) {
+  height: 44px;
+  line-height: 44px;
+  padding: 0 20px;
+}
+.mode-segmented :deep(.el-segmented__item.is-selected) {
   color: #fff;
 }
 </style>
