@@ -35,9 +35,10 @@
             type="password"
             show-password
             :placeholder="form.hasToken ? '已保存（输入新值可覆盖）' : '未设置'"
+            @paste="onTokenPaste"
           />
           <div class="muted" style="margin-top:8px;font-size:12px;">
-            从浏览器 DevTools → Application → Cookies 复制 `_yuque_session` 的值。
+            从浏览器 DevTools → Application → Cookies 复制 `_yuque_session` 的值，粘贴时会自动识别。
           </div>
         </el-form-item>
 
@@ -136,6 +137,35 @@ async function clearToken() {
     ElMessage.success('Token 已清除')
   } catch (e: any) {
     ElMessage.error(e?.message || '清除失败')
+  }
+}
+
+function onTokenPaste(e: ClipboardEvent) {
+  const raw = e.clipboardData?.getData('text') || ''
+  if (!raw) return
+
+  // 尝试从常见格式中提取 token
+  // 1. 直接是 _yuque_session=xxx
+  // 2. 从 DevTools 复制的一行 cookie 数据
+  // 3. 从 Application → Cookies 表格复制的多列数据
+  const lines = raw.split(/\r?\n/).map(l => l.trim()).filter(Boolean)
+  for (const line of lines) {
+    // 匹配 _yuque_session=xxx 或 _yuque_session\txxx
+    const match = line.match(/_yuque_session[=\s]([^\s;]+)/)
+    if (match) {
+      form.token = match[1]
+      e.preventDefault()
+      ElMessage.success('已自动识别 Token')
+      return
+    }
+  }
+
+  // 如果没匹配到，但粘贴内容看起来像纯 token（长度 > 20 的字母数字）
+  const trimmed = raw.trim()
+  if (/^[a-zA-Z0-9_-]{20,}$/.test(trimmed)) {
+    form.token = trimmed
+    e.preventDefault()
+    ElMessage.success('已自动识别 Token')
   }
 }
 
