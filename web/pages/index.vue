@@ -35,12 +35,14 @@
       <h3 class="panel-title">新建任务</h3>
       <el-form label-position="top" @submit.prevent>
         <el-form-item label="下载模式">
-          <el-segmented v-model="form.type" :options="[
-            { label: '整库', value: 'book' },
-            { label: '单/多文档', value: 'docs' },
-            { label: '批量知识库', value: 'batch' },
-            { label: '账号全部', value: 'user' },
-          ]" />
+          <div class="mode-segmented">
+            <el-segmented v-model="form.type" :options="[
+              { label: '整库', value: 'book' },
+              { label: '单/多文档', value: 'docs' },
+              { label: '批量知识库', value: 'batch' },
+              { label: '账号全部', value: 'user' },
+            ]" />
+          </div>
         </el-form-item>
 
         <el-form-item v-if="form.type !== 'user'" :label="urlLabel">
@@ -315,3 +317,14 @@ function goLibrary() {
 onMounted(loadSettingsDefaults)
 onBeforeUnmount(closeEs)
 </script>
+
+<style scoped>
+.mode-segmented .el-segmented {
+  --el-segmented-item-selected-color: var(--el-text-color-primary);
+  --el-segmented-item-selected-bg-color: #31cc79;
+  --el-border-radius-base: 16px;
+}
+.mode-segmented .el-segmented__item.is-selected {
+  color: #fff;
+}
+</style>
