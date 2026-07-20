@@ -38,7 +38,7 @@
           <template #default="{ row }">
             <div v-if="row.type === 'user'">账号全部知识库</div>
             <div v-else class="muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
-              {{ (row.urls || []).join(' | ') }}
+              {{ (row.urls || []).map(shortUrl).join(' | ') }}
             </div>
           </template>
         </el-table-column>
@@ -114,6 +114,9 @@ function statusType(s: string) {
 }
 function formatTime(ts: number) {
   return new Date(ts).toLocaleString()
+}
+function shortUrl(url: string) {
+  return url.replace(/^https?:\/\/(www\.)?/, '')
 }
 function countBy(status: string) {
   return tasks.value.filter((t) => t.status === status).length
