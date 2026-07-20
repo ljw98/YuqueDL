@@ -312,7 +312,7 @@ textarea {
 }
 
 .content {
-  padding: 10px 28px 24px;
+  padding: 24px 28px;
   flex: 1 1 auto;
   min-height: 0;
   overflow: auto;
