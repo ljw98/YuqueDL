@@ -93,9 +93,9 @@
       </el-form>
     </div>
 
-    <div class="panel" style="width:320px;flex-shrink:0;">
+    <div class="panel" style="flex:1;max-width:720px;">
       <h3 class="panel-title">默认配置</h3>
-      <el-form label-position="top">
+      <el-form label-position="top" style="max-width:680px;">
         <el-form-item label="语雀 Token">
           <el-input
             v-model="form.token"
