@@ -347,8 +347,13 @@ onBeforeUnmount(closeEs)
 .advanced-collapse :deep(.el-collapse-item__wrap) {
   background-color: #fff;
   padding: 12px 16px 0;
+  will-change: height;
 }
 .advanced-collapse :deep(.el-collapse-item__content) {
   padding-bottom: 0;
+}
+.advanced-collapse :deep(.el-collapse-item__wrap),
+.advanced-collapse :deep(.el-collapse-item__header) {
+  transition: none !important;
 }
 </style>
