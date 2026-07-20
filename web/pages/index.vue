@@ -320,7 +320,7 @@ onBeforeUnmount(closeEs)
 
 <style scoped>
 .mode-segmented .el-segmented {
-  --el-segmented-item-selected-color: var(--el-text-color-primary);
+  --el-segmented-item-selected-color: #fff;
   --el-segmented-item-selected-bg-color: #31cc79;
   --el-border-radius-base: 16px;
 }
