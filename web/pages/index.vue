@@ -325,9 +325,9 @@ onBeforeUnmount(closeEs)
   --el-border-radius-base: 16px;
 }
 .mode-segmented :deep(.el-segmented__item) {
-  height: 44px;
-  line-height: 44px;
-  padding: 0 20px;
+  height: 32px;
+  line-height: 32px;
+  padding: 0 16px;
 }
 .mode-segmented :deep(.el-segmented__item.is-selected) {
   color: #fff;
