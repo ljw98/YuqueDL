@@ -30,9 +30,10 @@
       </div>
     </div>
 
-    <div class="panel" style="max-width:720px;">
-      <h3 class="panel-title">新建任务</h3>
-      <el-form label-position="top" @submit.prevent style="max-width:680px;">
+    <div style="display:flex;gap:20px;align-items:flex-start;">
+      <div class="panel" style="flex:1;max-width:720px;">
+        <h3 class="panel-title">新建任务</h3>
+        <el-form label-position="top" @submit.prevent style="max-width:680px;">
         <el-form-item label="下载模式">
           <div class="mode-segmented">
             <el-segmented v-model="form.type" :options="[
@@ -90,6 +91,22 @@
           开始下载
         </el-button>
       </el-form>
+    </div>
+
+    <div class="panel" style="width:320px;flex-shrink:0;">
+      <h3 class="panel-title">快速操作</h3>
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <el-button type="primary" plain round @click="navigateTo('/tasks')">
+          <el-icon><List /></el-icon> 查看任务中心
+        </el-button>
+        <el-button type="primary" plain round @click="navigateTo('/library')">
+          <el-icon><FolderOpened /></el-icon> 浏览已下载
+        </el-button>
+        <el-button type="primary" plain round @click="navigateTo('/settings')">
+          <el-icon><Setting /></el-icon> 打开设置
+        </el-button>
+      </div>
+    </div>
     </div>
 
     <div v-if="activeTask" class="panel">
