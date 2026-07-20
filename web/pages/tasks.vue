@@ -74,6 +74,8 @@
             >
               取消
             </el-button>
+            <el-button size="small" @click="showDetail(row)">详情</el-button>
+            <el-button size="small" type="danger" @click="remove(row.id)">删除</el-button>
             <el-button
               v-if="row.status === 'failed' || row.status === 'cancelled'"
               size="small"
@@ -82,8 +84,6 @@
             >
               重试
             </el-button>
-            <el-button size="small" @click="showDetail(row)">详情</el-button>
-            <el-button size="small" type="danger" @click="remove(row.id)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
