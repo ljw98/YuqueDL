@@ -30,7 +30,7 @@
       </div>
     </div>
 
-    <div class="panel">
+    <div class="panel" style="max-width:720px;">
       <h3 class="panel-title">新建任务</h3>
       <el-form label-position="top" @submit.prevent>
         <el-form-item label="下载模式">
