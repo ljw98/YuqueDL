@@ -5,7 +5,6 @@
         <h1>下载知识库</h1>
         <p>粘贴语雀链接，配置选项后即可开始。下载过程可实时查看进度与日志。</p>
       </div>
-      <el-button type="primary" round @click="navigateTo('/library')">查看已下载</el-button>
     </div>
 
     <div class="stat-row">
