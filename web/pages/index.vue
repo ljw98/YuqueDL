@@ -49,7 +49,8 @@
           <el-input
             v-model="form.urls"
             type="textarea"
-            :rows="form.type === 'book' ? 2 : 5"
+            resize="none"
+            :rows="3"
             :placeholder="urlPlaceholder"
           />
         </el-form-item>
