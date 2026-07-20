@@ -58,7 +58,7 @@
           <el-input v-model="form.password" type="password" show-password />
         </el-form-item>
 
-        <el-collapse v-model="advancedOpen" style="margin-bottom:16px;border:none;background:transparent;">
+        <el-collapse v-model="advancedOpen" class="advanced-collapse">
           <el-collapse-item title="高级选项" name="advanced">
             <el-row :gutter="16">
               <el-col :md="12" :sm="24">
@@ -331,5 +331,21 @@ onBeforeUnmount(closeEs)
 }
 .mode-segmented :deep(.el-segmented__item.is-selected) {
   color: #fff;
+}
+.advanced-collapse {
+  margin-bottom: 16px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.advanced-collapse :deep(.el-collapse-item__header) {
+  background-color: var(--el-fill-color-light);
+  padding: 0 16px;
+  height: 40px;
+  line-height: 40px;
+}
+.advanced-collapse :deep(.el-collapse-item__wrap) {
+  background-color: #fff;
+  padding: 12px 16px;
 }
 </style>
