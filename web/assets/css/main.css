@@ -670,7 +670,7 @@ textarea {
 .el-tag {
   border-radius: 999px !important;
   border: none !important;
-  font-weight: 650 !important;
+  font-weight: 500 !important;
 }
 
 .el-progress-bar__outer {
