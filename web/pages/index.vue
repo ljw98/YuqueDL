@@ -59,34 +59,6 @@
             <el-input v-model="form.password" type="password" show-password />
           </el-form-item>
 
-          <el-collapse v-model="advancedOpen" class="advanced-collapse">
-            <el-collapse-item title="高级选项" name="advanced">
-              <el-row :gutter="16">
-                <el-col :md="12" :sm="24">
-                  <el-form-item label="Token（cookie 值，可空）">
-                    <el-input v-model="form.token" type="password" show-password placeholder="默认读取设置中的 token" />
-                  </el-form-item>
-                </el-col>
-                <el-col :md="12" :sm="24">
-                  <el-form-item label="Cookie Key（企业版）">
-                    <el-input v-model="form.key" placeholder="默认 _yuque_session" />
-                  </el-form-item>
-                </el-col>
-              </el-row>
-
-              <el-form-item label="选项">
-                <div class="option-chips">
-                  <el-checkbox v-model="form.ignoreImg" border>忽略图片</el-checkbox>
-                  <el-checkbox v-model="form.ignoreAttachments" border>忽略附件</el-checkbox>
-                  <el-checkbox v-model="form.incremental" border>增量下载</el-checkbox>
-                  <el-checkbox v-model="form.toc" border>生成 TOC</el-checkbox>
-                  <el-checkbox v-model="form.hideFooter" border>隐藏页脚</el-checkbox>
-                  <el-checkbox v-model="form.convertMarkdownVideoLinks" border>视频转 video</el-checkbox>
-                </div>
-              </el-form-item>
-            </el-collapse-item>
-          </el-collapse>
-
           <el-button type="primary" size="large" round :loading="submitting" @click="startDownload">
             开始下载
           </el-button>
@@ -95,6 +67,7 @@
 
       <div class="panel task-config-card">
         <h3 class="panel-title">默认配置</h3>
+        <p class="muted" style="margin:-6px 0 16px;">这里保存新任务的默认值，新建任务会直接使用。</p>
         <el-form label-position="top">
           <el-form-item label="语雀 Token">
             <el-input
@@ -198,7 +171,6 @@ const activeTask = ref<any>(null)
 const logs = ref<Array<{ ts: number; level: string; message: string }>>([])
 const logBoxRef = ref<HTMLElement | null>(null)
 const hasSavedToken = ref(false)
-const advancedOpen = ref<string[]>([])
 const saving = ref(false)
 let es: EventSource | null = null
 
@@ -409,30 +381,6 @@ onBeforeUnmount(closeEs)
 .mode-segmented :deep(.el-segmented__item.is-selected) {
   color: #fff;
 }
-.advanced-collapse {
-  margin-bottom: 16px;
-  border: 1px solid var(--el-border-color-lighter);
-  border-radius: 8px;
-  overflow: hidden;
-}
-.advanced-collapse :deep(.el-collapse-item__header) {
-  background-color: var(--el-fill-color-light);
-  padding: 0 16px;
-  height: 40px;
-  line-height: 40px;
-}
-.advanced-collapse :deep(.el-collapse-item__wrap) {
-  background-color: #fff;
-  padding: 12px 16px 0;
-  will-change: height;
-}
-.advanced-collapse :deep(.el-collapse-item__content) {
-  padding-bottom: 0;
-}
-.advanced-collapse :deep(.el-collapse-item__wrap),
-.advanced-collapse :deep(.el-collapse-item__header) {
-  transition: none !important;
-}
 .task-config-grid {
   display: grid;
   gap: 20px;
@@ -441,6 +389,15 @@ onBeforeUnmount(closeEs)
 }
 .task-config-card {
   min-width: 0;
+}
+.task-config-card .option-chips {
+  gap: 8px;
+}
+.task-config-card .el-form-item {
+  margin-bottom: 18px;
+}
+.task-config-card .el-form-item:last-of-type {
+  margin-bottom: 0;
 }
 @media (max-width: 1100px) {
   .task-config-grid {
