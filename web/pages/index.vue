@@ -136,6 +136,12 @@
         <div v-if="!logs.length" class="muted">等待日志…</div>
       </div>
     </div>
+
+    <div v-if="activeTask" class="panel" style="text-align:center;padding:24px;">
+      <el-button type="primary" round @click="navigateTo('/tasks')">
+        前往任务中心查看详情
+      </el-button>
+    </div>
   </div>
 </template>
 
