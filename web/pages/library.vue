@@ -28,7 +28,7 @@
             node-key="path"
             :props="{ label: 'label', children: 'children' }"
             highlight-current
-            default-expand-all
+            :default-expanded-keys="expandedKeys"
             @node-click="onNodeClick"
           />
           <div v-else class="reader-empty" style="min-height:180px;">
@@ -88,6 +88,7 @@ const html = ref('')
 const loadingBooks = ref(false)
 const loadingTree = ref(false)
 const loadingFile = ref(false)
+const expandedKeys = ref<string[]>([])
 
 const isMarkdown = computed(() => ['.md', '.markdown'].includes(String(fileMeta.value?.ext || '').toLowerCase()))
 const isImage = computed(() => ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg'].includes(String(fileMeta.value?.ext || '').toLowerCase()))
@@ -119,6 +120,8 @@ async function onBookChange() {
   try {
     const res = await $fetch<{ tree: any[] }>(`/api/library/${encodeURIComponent(currentBook.value)}/tree`)
     treeData.value = res.tree || []
+    // 默认只展开第一层目录
+    expandedKeys.value = collectFirstLevelDirs(treeData.value)
     const indexNode = findFile(treeData.value, 'index.md')
     if (indexNode) await openFile(indexNode.path)
   } catch (e: any) {
@@ -126,6 +129,16 @@ async function onBookChange() {
   } finally {
     loadingTree.value = false
   }
+}
+
+function collectFirstLevelDirs(nodes: any[]): string[] {
+  const keys: string[] = []
+  for (const n of nodes) {
+    if (n.type === 'dir') {
+      keys.push(n.path)
+    }
+  }
+  return keys
 }
 
 function findFile(nodes: any[], name: string): any | null {
