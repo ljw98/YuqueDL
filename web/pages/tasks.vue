@@ -16,7 +16,6 @@
       <div class="stat-card">
         <div class="label">进行中</div>
         <div class="value">{{ countBy('running') + countBy('queued') }}</div>
-        <div class="hint">串行队列执行</div>
       </div>
       <div class="stat-card">
         <div class="label">成功</div>
