@@ -30,97 +30,97 @@
       </div>
     </div>
 
-    <div style="display:flex;gap:20px;align-items:flex-start;">
-      <div class="panel" style="flex:1;max-width:720px;">
+    <div class="task-config-grid">
+      <div class="panel task-config-card">
         <h3 class="panel-title">新建任务</h3>
-        <el-form label-position="top" @submit.prevent style="max-width:680px;">
-        <el-form-item label="下载模式">
-          <div class="mode-segmented">
-            <el-segmented v-model="form.type" :options="[
-              { label: '整库', value: 'book' },
-              { label: '单/多文档', value: 'docs' },
-              { label: '批量知识库', value: 'batch' },
-              { label: '账号全部', value: 'user' },
-            ]" />
-          </div>
-        </el-form-item>
+        <el-form label-position="top" @submit.prevent>
+          <el-form-item label="下载模式">
+            <div class="mode-segmented">
+              <el-segmented v-model="form.type" :options="[
+                { label: '整库', value: 'book' },
+                { label: '单/多文档', value: 'docs' },
+                { label: '批量知识库', value: 'batch' },
+                { label: '账号全部', value: 'user' },
+              ]" />
+            </div>
+          </el-form-item>
 
-        <el-form-item v-if="form.type !== 'user'" :label="urlLabel">
-          <el-input
-            v-model="form.urls"
-            type="textarea"
-            resize="none"
-            :rows="3"
-            :placeholder="urlPlaceholder"
-          />
-        </el-form-item>
+          <el-form-item v-if="form.type !== 'user'" :label="urlLabel">
+            <el-input
+              v-model="form.urls"
+              type="textarea"
+              resize="none"
+              :rows="3"
+              :placeholder="urlPlaceholder"
+            />
+          </el-form-item>
 
-        <el-form-item label="公开密码（如有）">
-          <el-input v-model="form.password" type="password" show-password />
-        </el-form-item>
+          <el-form-item label="公开密码（如有）">
+            <el-input v-model="form.password" type="password" show-password />
+          </el-form-item>
 
-        <el-collapse v-model="advancedOpen" class="advanced-collapse">
-          <el-collapse-item title="高级选项" name="advanced">
-            <el-row :gutter="16">
-              <el-col :md="12" :sm="24">
-                <el-form-item label="Token（cookie 值，可空）">
-                  <el-input v-model="form.token" type="password" show-password placeholder="默认读取设置中的 token" />
-                </el-form-item>
-              </el-col>
-              <el-col :md="12" :sm="24">
-                <el-form-item label="Cookie Key（企业版）">
-                  <el-input v-model="form.key" placeholder="默认 _yuque_session" />
-                </el-form-item>
-              </el-col>
-            </el-row>
+          <el-collapse v-model="advancedOpen" class="advanced-collapse">
+            <el-collapse-item title="高级选项" name="advanced">
+              <el-row :gutter="16">
+                <el-col :md="12" :sm="24">
+                  <el-form-item label="Token（cookie 值，可空）">
+                    <el-input v-model="form.token" type="password" show-password placeholder="默认读取设置中的 token" />
+                  </el-form-item>
+                </el-col>
+                <el-col :md="12" :sm="24">
+                  <el-form-item label="Cookie Key（企业版）">
+                    <el-input v-model="form.key" placeholder="默认 _yuque_session" />
+                  </el-form-item>
+                </el-col>
+              </el-row>
 
-            <el-form-item label="选项">
-              <div class="option-chips">
-                <el-checkbox v-model="form.ignoreImg" border>忽略图片</el-checkbox>
-                <el-checkbox v-model="form.ignoreAttachments" border>忽略附件</el-checkbox>
-                <el-checkbox v-model="form.incremental" border>增量下载</el-checkbox>
-                <el-checkbox v-model="form.toc" border>生成 TOC</el-checkbox>
-                <el-checkbox v-model="form.hideFooter" border>隐藏页脚</el-checkbox>
-                <el-checkbox v-model="form.convertMarkdownVideoLinks" border>视频转 video</el-checkbox>
-              </div>
-            </el-form-item>
-          </el-collapse-item>
-        </el-collapse>
+              <el-form-item label="选项">
+                <div class="option-chips">
+                  <el-checkbox v-model="form.ignoreImg" border>忽略图片</el-checkbox>
+                  <el-checkbox v-model="form.ignoreAttachments" border>忽略附件</el-checkbox>
+                  <el-checkbox v-model="form.incremental" border>增量下载</el-checkbox>
+                  <el-checkbox v-model="form.toc" border>生成 TOC</el-checkbox>
+                  <el-checkbox v-model="form.hideFooter" border>隐藏页脚</el-checkbox>
+                  <el-checkbox v-model="form.convertMarkdownVideoLinks" border>视频转 video</el-checkbox>
+                </div>
+              </el-form-item>
+            </el-collapse-item>
+          </el-collapse>
 
-        <el-button type="primary" size="large" round :loading="submitting" @click="startDownload">
-          开始下载
-        </el-button>
-      </el-form>
-    </div>
+          <el-button type="primary" size="large" round :loading="submitting" @click="startDownload">
+            开始下载
+          </el-button>
+        </el-form>
+      </div>
 
-    <div class="panel" style="flex:1;max-width:720px;">
-      <h3 class="panel-title">默认配置</h3>
-      <el-form label-position="top" style="max-width:680px;">
-        <el-form-item label="语雀 Token">
-          <el-input
-            v-model="form.token"
-            type="password"
-            show-password
-            :placeholder="hasSavedToken ? '已保存（输入新值可覆盖）' : '未设置'"
-            @paste="onTokenPaste"
-          />
-        </el-form-item>
-        <el-form-item label="Cookie Key">
-          <el-input v-model="form.key" placeholder="_yuque_session" />
-        </el-form-item>
-        <el-form-item label="默认选项">
-          <div class="option-chips">
-            <el-checkbox v-model="form.ignoreImg" border>忽略图片</el-checkbox>
-            <el-checkbox v-model="form.ignoreAttachments" border>忽略附件</el-checkbox>
-            <el-checkbox v-model="form.incremental" border>增量下载</el-checkbox>
-            <el-checkbox v-model="form.toc" border>生成 TOC</el-checkbox>
-            <el-checkbox v-model="form.hideFooter" border>隐藏页脚</el-checkbox>
-            <el-checkbox v-model="form.convertMarkdownVideoLinks" border>视频转 video</el-checkbox>
-          </div>
-        </el-form-item>
-        <el-button type="primary" round :loading="saving" @click="saveSettings">保存设置</el-button>
-      </el-form>
-    </div>
+      <div class="panel task-config-card">
+        <h3 class="panel-title">默认配置</h3>
+        <el-form label-position="top">
+          <el-form-item label="语雀 Token">
+            <el-input
+              v-model="form.token"
+              type="password"
+              show-password
+              :placeholder="hasSavedToken ? '已保存（输入新值可覆盖）' : '未设置'"
+              @paste="onTokenPaste"
+            />
+          </el-form-item>
+          <el-form-item label="Cookie Key">
+            <el-input v-model="form.key" placeholder="_yuque_session" />
+          </el-form-item>
+          <el-form-item label="默认选项">
+            <div class="option-chips">
+              <el-checkbox v-model="form.ignoreImg" border>忽略图片</el-checkbox>
+              <el-checkbox v-model="form.ignoreAttachments" border>忽略附件</el-checkbox>
+              <el-checkbox v-model="form.incremental" border>增量下载</el-checkbox>
+              <el-checkbox v-model="form.toc" border>生成 TOC</el-checkbox>
+              <el-checkbox v-model="form.hideFooter" border>隐藏页脚</el-checkbox>
+              <el-checkbox v-model="form.convertMarkdownVideoLinks" border>视频转 video</el-checkbox>
+            </div>
+          </el-form-item>
+          <el-button type="primary" round :loading="saving" @click="saveSettings">保存设置</el-button>
+        </el-form>
+      </div>
     </div>
 
     <div v-if="activeTask" class="panel">
@@ -432,5 +432,19 @@ onBeforeUnmount(closeEs)
 .advanced-collapse :deep(.el-collapse-item__wrap),
 .advanced-collapse :deep(.el-collapse-item__header) {
   transition: none !important;
+}
+.task-config-grid {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  width: 100%;
+}
+.task-config-card {
+  min-width: 0;
+}
+@media (max-width: 1100px) {
+  .task-config-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>
