@@ -32,7 +32,7 @@
       <el-table :data="tasks" stripe v-loading="loading" empty-text="暂无任务" style="--el-table-border:none;">
         <el-table-column prop="type" label="类型" width="110">
           <template #default="{ row }">
-            <el-tag effect="plain" round>{{ typeText(row.type) }}</el-tag>
+            <el-tag :type="row.type === 'book' ? 'primary' : 'info'" size="small" effect="light">{{ typeText(row.type) }}</el-tag>
           </template>
         </el-table-column>
         <el-table-column label="目标" min-width="240">
