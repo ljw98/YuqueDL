@@ -94,18 +94,32 @@
     </div>
 
     <div class="panel" style="width:320px;flex-shrink:0;">
-      <h3 class="panel-title">快速操作</h3>
-      <div style="display:flex;flex-direction:column;gap:12px;">
-        <el-button type="primary" plain round @click="navigateTo('/tasks')">
-          <el-icon><List /></el-icon> 查看任务中心
-        </el-button>
-        <el-button type="primary" plain round @click="navigateTo('/library')">
-          <el-icon><FolderOpened /></el-icon> 浏览已下载
-        </el-button>
-        <el-button type="primary" plain round @click="navigateTo('/settings')">
-          <el-icon><Setting /></el-icon> 打开设置
-        </el-button>
-      </div>
+      <h3 class="panel-title">默认配置</h3>
+      <el-form label-position="top">
+        <el-form-item label="语雀 Token">
+          <el-input
+            v-model="form.token"
+            type="password"
+            show-password
+            :placeholder="hasSavedToken ? '已保存（输入新值可覆盖）' : '未设置'"
+            @paste="onTokenPaste"
+          />
+        </el-form-item>
+        <el-form-item label="Cookie Key">
+          <el-input v-model="form.key" placeholder="_yuque_session" />
+        </el-form-item>
+        <el-form-item label="默认选项">
+          <div class="option-chips">
+            <el-checkbox v-model="form.ignoreImg" border>忽略图片</el-checkbox>
+            <el-checkbox v-model="form.ignoreAttachments" border>忽略附件</el-checkbox>
+            <el-checkbox v-model="form.incremental" border>增量下载</el-checkbox>
+            <el-checkbox v-model="form.toc" border>生成 TOC</el-checkbox>
+            <el-checkbox v-model="form.hideFooter" border>隐藏页脚</el-checkbox>
+            <el-checkbox v-model="form.convertMarkdownVideoLinks" border>视频转 video</el-checkbox>
+          </div>
+        </el-form-item>
+        <el-button type="primary" round :loading="saving" @click="saveSettings">保存设置</el-button>
+      </el-form>
     </div>
     </div>
 
@@ -185,6 +199,7 @@ const logs = ref<Array<{ ts: number; level: string; message: string }>>([])
 const logBoxRef = ref<HTMLElement | null>(null)
 const hasSavedToken = ref(false)
 const advancedOpen = ref<string[]>([])
+const saving = ref(false)
 let es: EventSource | null = null
 
 const modeLabel = computed(() => ({
@@ -329,6 +344,51 @@ async function cancelActive() {
 
 function goLibrary() {
   navigateTo('/library')
+}
+
+async function saveSettings() {
+  saving.value = true
+  try {
+    const body: any = {
+      key: form.key,
+      ignoreImg: form.ignoreImg,
+      ignoreAttachments: form.ignoreAttachments,
+      incremental: form.incremental,
+      toc: form.toc,
+      hideFooter: form.hideFooter,
+      convertMarkdownVideoLinks: form.convertMarkdownVideoLinks,
+    }
+    if (form.token) body.token = form.token
+    const res = await $fetch('/api/settings', { method: 'PUT', body })
+    hasSavedToken.value = Boolean((res as any).settings?.hasToken)
+    if (form.token) form.token = ''
+    ElMessage.success('已保存')
+  } catch (e: any) {
+    ElMessage.error(e?.message || '保存失败')
+  } finally {
+    saving.value = false
+  }
+}
+
+function onTokenPaste(e: ClipboardEvent) {
+  const raw = e.clipboardData?.getData('text') || ''
+  if (!raw) return
+  const lines = raw.split(/\r?\n/).map(l => l.trim()).filter(Boolean)
+  for (const line of lines) {
+    const match = line.match(/_yuque_session[=\s]([^\s;]+)/)
+    if (match) {
+      form.token = match[1]
+      e.preventDefault()
+      ElMessage.success('已自动识别 Token')
+      return
+    }
+  }
+  const trimmed = raw.trim()
+  if (/^[a-zA-Z0-9_-]{20,}$/.test(trimmed)) {
+    form.token = trimmed
+    e.preventDefault()
+    ElMessage.success('已自动识别 Token')
+  }
 }
 
 onMounted(loadSettingsDefaults)
