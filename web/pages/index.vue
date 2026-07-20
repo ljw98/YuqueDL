@@ -323,7 +323,7 @@ onBeforeUnmount(closeEs)
   --el-segmented-item-selected-color: #fff;
   --el-segmented-item-selected-bg-color: #31cc79;
   --el-border-radius-base: 16px;
-  --el-segmented-item-height: 36px;
+  --el-segmented-item-height: 44px;
 }
 .mode-segmented .el-segmented__item.is-selected {
   color: #fff;
