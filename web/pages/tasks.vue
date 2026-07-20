@@ -38,7 +38,17 @@
           <template #default="{ row }">
             <div v-if="row.type === 'user'">账号全部知识库</div>
             <div v-else class="muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
-              {{ (row.urls || []).map(shortUrl).join(' | ') }}
+              <a
+                v-for="(url, idx) in row.urls || []"
+                :key="idx"
+                :href="url"
+                target="_blank"
+                style="color: var(--text-secondary); text-decoration: none;"
+                @click.stop
+              >
+                {{ shortUrl(url) }}
+                <span v-if="idx < (row.urls || []).length - 1" style="margin: 0 4px;">|</span>
+              </a>
             </div>
           </template>
         </el-table-column>
