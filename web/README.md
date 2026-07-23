@@ -1,6 +1,6 @@
-# Yuque DL Web Console
+# YuqueDL Web Console
 
-语雀知识库下载器的 Web 可视化操作台（Nuxt 3）。
+语雀知识库 Web 可视化操作台（Nuxt 3）。
 
 ## 功能特性
 
@@ -112,3 +112,4 @@ node tests/task-options.mjs
 - [docs/PROJECT.md](../docs/PROJECT.md)
 - [docs/AUDIT_2026-07-22.md](../docs/AUDIT_2026-07-22.md)
 - [docs/AUDIT_2026-07-23.md](../docs/AUDIT_2026-07-23.md)
+.md](../docs/AUDIT_2026-07-23.md)

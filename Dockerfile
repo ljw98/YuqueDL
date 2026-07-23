@@ -1,5 +1,5 @@
-# Yuque DL Web Console — production image
-# Multi-stage: build core + Nuxt, run Nitro preview-compatible node server.
+# YuqueDL Web Console — production image
+# Multi-stage: build download core + Nuxt, run Nitro server.
 
 FROM node:20-bookworm-slim AS base
 WORKDIR /app
@@ -39,7 +39,6 @@ RUN apt-get update \
 COPY --from=build /app/package.json /app/package.json
 COPY --from=build /app/dist /app/dist
 COPY --from=build /app/server-lib /app/server-lib
-COPY --from=build /app/bin /app/bin
 COPY --from=build /app/web/.output /app/web/.output
 COPY --from=build /app/web/package.json /app/web/package.json
 

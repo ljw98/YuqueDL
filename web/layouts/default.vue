@@ -132,14 +132,13 @@
         </div>
 
         <div class="about-footer-note">
-          基于
+          YuqueDL · 下载引擎致谢
           <a
             href="https://github.com/gxr404/yuque-dl"
             target="_blank"
             rel="noopener noreferrer"
             class="about-link"
-          >yuque-dl</a>
-          二次开发
+          >gxr404/yuque-dl</a>
         </div>
       </div>
     </el-dialog>

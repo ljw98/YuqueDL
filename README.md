@@ -1,259 +1,98 @@
-# yuque-dl
+# YuqueDL
 
-语雀知识库下载为本地markdown
+语雀知识库 **Web 控制台**：把知识库下载为本地 Markdown，并提供任务管理、实时日志、知识库预览、定时同步、ZIP 导出，以及 Open API / MCP 接入。
 
-![header](https://socialify.git.ci/gxr404/yuque-dl/image?description=1&descriptionEditable=%E8%AF%AD%E9%9B%80%E7%9F%A5%E8%AF%86%E5%BA%93%E4%B8%8B%E8%BD%BD&issues=1&logo=https%3A%2F%2Fraw.githubusercontent.com%2Fgxr404%2Fyuque-dl%2Fmain%2Fdocs%2Fassets%2Flogo.png&name=1&pattern=Circuit%20Board&pulls=1&stargazers=1&theme=Light)
+> 下载引擎基于 [gxr404/yuque-dl](https://github.com/gxr404/yuque-dl) 的核心能力二次开发与整合；本仓库面向 **可视化控制台**，不再维护原 CLI / npm 发布形态。
 
-## Prerequisite
+## 功能
 
-- Node.js 18.4 or later
+| 模块 | 能力 |
+|------|------|
+| 下载 | 整库 / 单多文档 / 批量 / 账号全部；公开 / 私有访问类型 |
+| 任务中心 | 进度与 SSE 日志、取消 / 重试、定时同步规则 |
+| 知识库 | 目录树、Markdown 预览、导出 ZIP、删除 |
+| 设置 | 语雀 Token、默认下载选项、并发、自动刷新、登录保护 |
+| 接口 | Bearer Token 的 Open REST 与 MCP Tools |
 
-## Install
+## 要求
+
+- Node.js **≥ 18.4**
+- 包管理推荐 **pnpm**
+
+## 快速开始
 
 ```bash
-npm i -g yuque-dl
-```
-
-
-
-## Web 控制台（可视化）
-
-本仓库内置 Nuxt Web 控制台，支持任务管理、实时日志、知识库预览、定时同步、ZIP 导出、Open API / MCP。
-
-```bash
-# 安装依赖
+# 安装依赖（根目录 + web）
 pnpm install
 pnpm --dir web install
 
-# 构建 core + 启动开发服（默认 8787）
+# 构建下载核心 + 启动开发服（默认 8787）
 pnpm run dev:web
-
-# 或生产构建
-pnpm run build:web
-pnpm run start:web
 ```
 
 打开 http://localhost:8787/
 
-### Docker（推荐部署）
+生产构建：
+
+```bash
+pnpm run build:web
+pnpm run start:web
+```
+
+## Docker
 
 ```bash
 docker compose up -d --build
 # http://localhost:8787/
 ```
 
-详见 [docs/DOCKER.md](./docs/DOCKER.md)（含 `Dockerfile` / `docker-compose.yml` 模板）。
+详见 [docs/DOCKER.md](./docs/DOCKER.md)。
 
-常用环境变量：
+### 常用环境变量
 
 | 变量 | 说明 |
 |------|------|
 | `YUQUE_DL_ACCESS_PASSWORD` | 控制台访问密码 |
-| `YUQUE_DL_SECRET` | 加密/会话密钥 |
+| `YUQUE_DL_SECRET` | 加密 / 会话密钥 |
 | `YUQUE_DL_DATA` | 数据目录（默认仓库内 `data/`，Docker 常用 `/data`） |
 | `YUQUE_DL_COOKIE_SECURE=1` | HTTPS 下开启 Secure Cookie |
-| `YUQUE_DL_TRUST_PROXY=1` | 可信反代后才信任 X-Forwarded-For |
-| `YUQUE_DL_STRICT_SINGLE_INSTANCE=1` | 与存活 instance.lock 冲突时拒绝加载队列 |
+| `YUQUE_DL_TRUST_PROXY=1` | 可信反代后才信任 `X-Forwarded-For` |
+| `YUQUE_DL_STRICT_SINGLE_INSTANCE=1` | 与存活 `instance.lock` 冲突时拒绝加载队列 |
 | `YUQUE_DL_CORE` | 自定义 core 入口路径 |
 
-> 任务队列为**单实例内存队列**（状态会落盘到 `data/jobs.json`）。请避免多个进程共享同一 `data` 目录同时跑任务。
+> 任务队列为**单实例内存队列**（状态落盘 `data/jobs.json`）。请避免多个进程共享同一 `data` 目录同时跑任务。
 
-更多说明：
+## 项目结构
+
+```
+.
+├── src/              # 下载引擎（core，Web 通过 dist 动态加载）
+├── dist/es/          # rollup 构建产物
+├── server-lib/       # core 备用 bundle
+├── web/              # Nuxt 3 控制台（UI + Nitro API）
+├── data/             # 运行时数据（gitignore）
+├── docs/             # 文档
+├── Dockerfile
+└── docker-compose.yml
+```
+
+## 文档
 
 - [web/README.md](./web/README.md) — 控制台功能与 API
-- [docs/PROJECT.md](./docs/PROJECT.md) — 项目架构与边界
+- [docs/PROJECT.md](./docs/PROJECT.md) — 架构与边界
 - [docs/DOCKER.md](./docs/DOCKER.md) — 容器部署
-- [docs/GET_TOEKN.md](./docs/GET_TOEKN.md) — 如何获取 `_yuque_session`
-- [docs/AUDIT_2026-07-23.md](./docs/AUDIT_2026-07-23.md) — 最新安全/冒烟审计
+- [docs/GET_TOEKN.md](./docs/GET_TOEKN.md) — 如何获取语雀 `_yuque_session`
+- [docs/AUDIT_2026-07-23.md](./docs/AUDIT_2026-07-23.md) — 安全 / 冒烟审计
 
-## Usage
+## 私有知识库与 Token
 
-```bash
-$ yuque-dl --help
+- **公开库**：一般无需 Token
+- **私有库 / 账号全部**：需要在设置页配置语雀 Cookie Token（`_yuque_session` 等）
+- **公开密码库**：使用知识库访问密码（与 Token 不同）
 
-  Usage:
-    $ yuque-dl <url>
+获取 Token 步骤见 [docs/GET_TOEKN.md](./docs/GET_TOEKN.md)。
 
-  Commands:
-    <url>                语雀知识库url
-    batch <...urls>      批量下载多个知识库
-    user                 下载当前账号的所有知识库
-    doc <...urls>        下载单个或多个文档
-    server <serverPath>  启动web服务
+## 许可与致谢
 
-  For more info, run any command with the `--help` flag:
-    $ yuque-dl --help
-    $ yuque-dl doc --help
-    $ yuque-dl server --help
-
-  Options:
-    -d, --distDir <dir>                  下载的目录
-                                          └─ eg: -d download (默认值: download)
-    -i, --ignoreImg                      忽略图片不下载 (默认值: false)
-    --ignoreAttachments [fileExtension]  忽略附件, 可选带上忽略的附件文件后缀(多种后缀逗号分割)
-                                          └─ eg: --ignoreAttachments mp4,pdf // 忽略后缀名mp4,pdf的附件
-                                          └─ eg: --ignoreAttachments // 忽略所有附件 (默认值: false)
-    -k, --key <key>                      语雀的cookie key， 默认是 "_yuque_session"， 在某些企业版本中 key 不一样
-    -t, --token <token>                  语雀的cookie key 对应的值
-    -p, --password <password>            公开密码访问的知识库/文档密码
-    --toc                                是否输出文档toc目录 (默认值: false)
-    --incremental                        开启增量下载[初次下载加不加该参数没区别] (默认值: false)
-    --convertMarkdownVideoLinks          转化markdown视频链接为video标签 (默认值: false)
-    --hideFooter                         是否禁用页脚显示[更新时间、原文地址...] (默认值: false)
-    -h, --help                           显示帮助信息
-    -v, --version                        显示当前版本
-```
-
-### Start
-
-下载整个知识库
-
-```bash
-# url 为对应需要的知识库地址
-yuque-dl "https://www.yuque.com/yuque/thyzgp"
-```
-
-下载知识库中指定文档
-
-```bash
-# 下载单个文档
-yuque-dl doc "https://www.yuque.com/yuque/thyzgp/repository"
-
-# 下载多个文档
-yuque-dl doc "https://www.yuque.com/yuque/thyzgp/repository" "https://www.yuque.com/yuque/thyzgp/gbdfpb"
-```
-
-### 多知识库下载
-
-下载当前账号的所有知识库
-
-```bash
-# 需要提供登录token，自动枚举并下载所有知识库
-yuque-dl user -t "your_yuque_session_token"
-
-# 指定输出目录
-yuque-dl user -t "token" -d ./my-yuque-backup
-```
-
-> 必须带 -t 指定token
-
-
-批量下载多个知识库
-
-```bash
-# 指定多个知识库URL批量下载
-yuque-dl batch "https://www.yuque.com/yuque/eaghk3" "https://www.yuque.com/yuque/rdglqp"
-
-# 搭配其他选项
-yuque-dl batch "url1" "url2" -t "token" -d ./backup --hideFooter
-```
-
-## Example
-
-![demo](https://github.com/gxr404/yuque-dl/assets/17134256/98fbbc81-91d4-47f8-9316-eb0ef060d6be)
-
-## 其他场景
-
-### 私有知识库
-
-通过别人私有知识库 分享的链接，需使用`-t`添加token才能下载
-
-```bash
-yuque-dl "https://www.yuque.com/yuque/thyzgp" -t "abcd..."
-```
-
-[token的获取请看](./docs/GET_TOEKN.md)
-
-### 企业私有服务
-
-企业服务有自己的域名(黄色语雀logo)，非`yuque.com`结尾, 如`https://yuque.antfin.com/r/zone`
-
-这种情况 token的key不唯一, 不一定是为`_yuque_session` 需用户使用 `-k` 指定 token的key,`-t` 指定 token的值。
-
-至于`key`具体是什么只能靠用户自己在 `浏览器Devtools-> Application -> Cookies` 里找了🤔
-
-### 公开密码访问的知识库
-
-> [!WARNING]
-> 下载"公开密码访问的知识库" 前提是需要知道别人设置的密码，输入密码后拿cookie进行下载，**无法做到破解密码**, 请须知
-
-![public_pwd](https://github.com/gxr404/yuque-dl/assets/17134256/b546a9a3-68f0-4f76-b450-6b16f464db5d)
-
-现有两种方式下载公开密码访问的知识库
-
-#### 通过密码
-
-```bash
-yuque-dl "url" -p "知识库密码"
-```
-
-#### 通过cookie
-
-⚠️ 通过`cookie`公开密码访问的知识库两种情况:
-
-- 已经登录语雀，访问需要密码的知识库 输入密码后使用`_yuque_session`这个cookie
-
-    ```bash
-    yuque-dl "url" -t "_yuque_session的值"
-    ```
-
-- 未登录语雀，访问需要密码的知识库 输入密码后需要使用`verified_books`/`verified_docs`这个cookie
-
-    ```bash
-    yuque-dl "url" -k "verified_books" -t "verified_books的值"
-    ```
-
-## 内置启动web服务可快速预览
-
-使用[`vitepress`](https://vitepress.dev/)快速启动一个web服务提供可预览下载的内容
-
-```bash
-yuque-dl server ./download/知识库/
-
-➜  Local:   http://localhost:5173/
-➜  Network: use --host to expose
-```
-
-![server](https://github.com/gxr404/yuque-dl/assets/17134256/6d3a06cd-20b1-4eca-ae75-d9a90614336f)
-
-## Feature
-
-- [x] 支持下载中断继续
-- [x] 支持图片下载本地
-- [x] 支持下载分享私有的知识库
-- [x] 支持转换表格类型的文档 (ps: 表格内插入图表暂不支持)
-- [x] 添加toc目录功能
-- [x] 添加测试
-- [x] 添加附件下载
-- [x] 支持下载单个或多个指定文档
-- [x] 支持一键下载当前账号的所有知识库
-- [x] 支持批量下载多个指定知识库
-- [ ] 支持其他文档类型？🤔
-- [ ] 直接打包成可执行文件 🤔
-
-## 常见错误
-
-1. 由于token可能含有 特殊字符导致参数识别错误
-
-```bash
-yuque-dl "https://www.yuque.com/yuque/thyzgp" -t "-a123"
-yuque-dl [ERROR]: Unknown option `-1`
-```
-
-解决方案
-
-```bash
-yuque-dl "https://www.yuque.com/yuque/thyzgp" -t="-a123"
-```
-
-2. 附件下载失败，需设置登录token
-
-附件文件下载需要用户登录token，即使是完全公开的知识库，下载附件也可能需要
-
-完全公开的知识库未登录的情况下查看附件:
-
-![attachments](https://github.com/user-attachments/assets/6e764abf-0da6-4fb8-ab96-7d027830b291)
-
-## Tips
-
-由于网络波动下载失败的，重新运行即可，已下载的进度不会受到影响
+- 本项目许可证：ISC
+- 下载引擎源自 [gxr404/yuque-dl](https://github.com/gxr404/yuque-dl)（ISC），感谢原作者

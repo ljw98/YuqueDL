@@ -1,4 +1,4 @@
-# Yuque DL Web Console — docker compose template (LAN)
+# YuqueDL Web Console — docker compose template (LAN)
 #
 # Usage:
 #   docker compose up -d --build
@@ -7,12 +7,12 @@
 # Optional: set secrets in .env next to this file.
 
 services:
-  yuque-dl-web:
+  yuquedl:
     build:
       context: .
       dockerfile: Dockerfile
-    image: yuque-dl-web:local
-    container_name: yuque-dl-web
+    image: yuquedl:local
+    container_name: yuquedl
     restart: unless-stopped
     ports:
       - "8787:8787"
@@ -34,8 +34,8 @@ services:
       # Set to 1 to refuse starting when another process holds instance.lock
       YUQUE_DL_STRICT_SINGLE_INSTANCE: ${YUQUE_DL_STRICT_SINGLE_INSTANCE:-0}
     volumes:
-      - yuque-dl-data:/data
+      - yuquedl-data:/data
     # single instance: do not scale this service with shared volume
 
 volumes:
-  yuque-dl-data:
+  yuquedl-data:

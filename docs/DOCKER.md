@@ -11,7 +11,7 @@
 ## 快速启动
 
 ```bash
-cd yuque-dl
+# 在仓库根目录
 
 # 可选：创建 .env
 # YUQUE_DL_ACCESS_PASSWORD=your-password
@@ -22,7 +22,7 @@ docker compose up -d --build
 
 浏览器打开：http://localhost:8787/
 
-数据持久化在 volume `yuque-dl-data` → 容器内 `/data`：
+数据持久化在 volume `yuquedl-data` → 容器内 `/data`：
 
 ```
 /data
@@ -62,10 +62,10 @@ docker compose up -d --build
 ## 仅构建镜像
 
 ```bash
-docker build -t yuque-dl-web:local .
-docker run --rm -p 8787:8787 -v yuque-data:/data \
+docker build -t yuquedl:local .
+docker run --rm -p 8787:8787 -v yuquedl-data:/data \
   -e YUQUE_DL_DATA=/data \
-  yuque-dl-web:local
+  yuquedl:local
 ```
 
 ## 开发（非 Docker）

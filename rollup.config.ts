@@ -2,12 +2,12 @@ import { defineConfig } from 'rollup'
 import typescript from '@rollup/plugin-typescript'
 import terser from '@rollup/plugin-terser'
 
+// Web console only needs the download engine entry (not CLI).
 export default defineConfig({
   input: {
     index: 'src/index.ts',
-    cli: 'src/cli.ts'
   },
-  output:[
+  output: [
     {
       format: 'es',
       dir: 'dist/es',
@@ -15,8 +15,6 @@ export default defineConfig({
   ],
   plugins: [
     typescript(),
-    terser()
-  ]
+    terser(),
+  ],
 })
-
-

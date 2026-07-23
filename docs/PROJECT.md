@@ -1,4 +1,4 @@
-# Yuque DL 项目介绍
+# YuqueDL 项目介绍
 
 ## 一句话
 
@@ -8,7 +8,7 @@
 
 | 部分 | 路径 | 说明 |
 |------|------|------|
-| CLI Core | `src/` + `dist/` / `server-lib/` | 原 `yuque-dl` 下载引擎（axios / markdown 处理） |
+| 下载引擎 | `src/` + `dist/` / `server-lib/` | 基于 yuque-dl 核心二次开发的下载能力（Web 动态加载） |
 | Web 控制台 | `web/` | Nuxt 3 + Element Plus + Nitro API |
 | 运行时数据 | `data/` | `settings.json` / `jobs.json` / `schedules.json` / `downloads/` |
 
@@ -58,9 +58,8 @@
 
 ## 相关文档
 
-- [根 README](../README.md) — CLI + Web 快速开始
+- [根 README](../README.md) — 快速开始
 - [Web README](../web/README.md) — 控制台功能与 API 表
 - [Docker](./DOCKER.md) — 镜像与 compose 模板
 - [审计 2026-07-22](./AUDIT_2026-07-22.md)
 - [审计 2026-07-23](./AUDIT_2026-07-23.md)
-- [CHANGELOG](../CHANGELOG.md) — 版本记录
