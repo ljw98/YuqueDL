@@ -1,14 +1,24 @@
 import { mkdir, writeFile, readFile, readdir, stat, access, copyFile } from 'node:fs/promises'
 import { dirname, join, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { createServer } from 'vitepress'
 
 import type { IServerCliOptions, ISidebarItem } from './types'
 import { existsSync } from 'node:fs'
 
 let restartPromise: Promise<void> | undefined
 
+async function loadVitePress() {
+  try {
+    return await import('vitepress')
+  } catch {
+    throw new Error(
+      '未安装 vitepress。CLI 预览服务需要该可选依赖，请执行: pnpm add vitepress@1.2.2',
+    )
+  }
+}
+
 export async function runServer(root: string, options: IServerCliOptions) {
+  const { createServer } = await loadVitePress()
   const rootPath = resolve(root)
   if (!await fileExists(rootPath)) {
     throw new Error('server root not found')

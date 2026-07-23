@@ -1,0 +1,15 @@
+node_modules
+web/node_modules
+web/.nuxt
+web/.output
+web/node-compile-cache
+web/python3
+web-debug-*.png
+data
+.git
+**/dist
+**/*.log
+**/.tmp-test-write
+coverage
+*.tgz
+backups

@@ -24,6 +24,11 @@
   --shadow-md: 0 8px 24px rgba(28, 39, 76, 0.06);
   --shadow-lg: 0 24px 60px rgba(28, 39, 76, 0.08);
   --font: Inter, "SF Pro Display", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --mobile-nav-h: 56px;
 }
 
 * { box-sizing: border-box; }
@@ -148,6 +153,10 @@ textarea {
   font-size: 14px;
   font-weight: 550;
   transition: all 0.18s ease;
+  /* 去掉浏览器默认黑框 focus outline */
+  outline: none;
+  border: 1px solid transparent;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .app-nav a .el-icon {
@@ -165,11 +174,34 @@ textarea {
   color: #6b728f;
 }
 
+/* 键盘聚焦时用轻品牌色环，避免黑框 */
+.app-nav a:focus-visible {
+  background: #f5f6fb;
+  color: var(--text);
+  box-shadow: 0 0 0 3px rgba(49, 204, 121, 0.18);
+  border-color: rgba(49, 204, 121, 0.28);
+}
+
+.app-nav a:focus:not(:focus-visible) {
+  outline: none;
+  box-shadow: none;
+}
+
 .app-nav a.router-link-active {
   background: var(--primary-soft);
   color: var(--primary);
   font-weight: 700;
   box-shadow: inset 0 0 0 1px rgba(49, 204, 121, 0.08);
+  border-color: transparent;
+}
+
+.app-nav a.router-link-active:focus-visible {
+  background: var(--primary-soft);
+  color: var(--primary);
+  box-shadow:
+    inset 0 0 0 1px rgba(49, 204, 121, 0.08),
+    0 0 0 3px rgba(49, 204, 121, 0.18);
+  border-color: rgba(49, 204, 121, 0.22);
 }
 
 .app-nav a.router-link-active .el-icon {
@@ -319,12 +351,48 @@ textarea {
   overscroll-behavior: contain;
 }
 
+/* 任务中心：锁定外层高度，只允许下载任务表内部滚动，避免页面+表格双滚动条 */
+.app-frame:has(.tasks-page),
+.app-shell:has(.tasks-page),
+.app-main:has(.tasks-page) {
+  height: 100% !important;
+  max-height: 100dvh !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
+.app-shell:has(.tasks-page) {
+  grid-template-rows: 1fr !important;
+}
+
+.content:has(.tasks-page) {
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column;
+  min-height: 0;
+  height: 100% !important;
+}
+
 .page-fill {
   min-height: 100%;
   height: 100%;
   display: flex;
   flex-direction: column;
 }
+
+.page-fill.tasks-page {
+  flex: 1 1 auto;
+  min-height: 0 !important;
+  height: 100% !important;
+  overflow: hidden !important;
+}
+
+html:has(.tasks-page),
+body:has(.tasks-page) {
+  height: 100%;
+  overflow: hidden;
+}
+
 
 .page-header {
   display: flex;
@@ -512,20 +580,30 @@ textarea {
   border-radius: 0 10px 10px 0;
 }
 
+.library-panel {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+  padding: 0;
+  overflow: hidden;
+}
+
 .library-layout {
   display: grid;
-  grid-template-columns: 300px minmax(0, 1fr);
-  gap: 16px;
+  grid-template-columns: 300px 1px minmax(0, 1fr);
+  gap: 0;
   align-items: stretch;
   flex: 1 1 auto;
   min-height: 0;
   height: 100%;
 }
 
-/* 网格并排时取消相邻 panel 的下沉间距 */
-.library-layout > .panel,
-.library-layout > .panel + .panel {
-  margin-top: 0 !important;
+.library-divider {
+  width: 0;
+  border-left: 1px dashed var(--border);
+  align-self: stretch;
 }
 
 .tree-panel,
@@ -537,6 +615,17 @@ textarea {
   flex-direction: column;
   overflow: hidden;
   align-self: stretch;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+.tree-panel {
+  padding: 20px 18px 18px;
+}
+
+.reader-panel {
+  padding: 20px 22px 18px;
 }
 
 .tree-panel .panel-title,
@@ -544,19 +633,98 @@ textarea {
   flex: 0 0 auto;
 }
 
-.tree-scroll {
-  flex: 1 1 auto;
-  min-height: 0;
-  max-height: none;
-  overflow: auto;
-  padding-right: 4px;
-}
-
+.tree-scroll,
 .reader-body {
   flex: 1 1 auto;
   min-height: 0;
-  overflow: auto;
+  height: 100%;
+  max-height: none;
+}
+
+.tree-scroll.el-scrollbar,
+.reader-body.el-scrollbar {
+  height: 100%;
+  min-height: 0;
+}
+
+/* wrap 必须限高，否则内容会把整栏撑开 */
+.tree-scroll .el-scrollbar__wrap,
+.reader-body .el-scrollbar__wrap {
+  max-height: 100%;
+  height: 100%;
   overscroll-behavior: contain;
+}
+
+.tree-scroll .el-scrollbar__view,
+.reader-body .el-scrollbar__view {
+  min-height: min-content;
+}
+
+/* 知识库滚动条：只显示滑块，不显示轨道背景 */
+.library-panel .el-scrollbar__bar {
+  border-radius: 999px;
+  z-index: 2;
+  background: transparent !important;
+}
+
+.library-panel .el-scrollbar__bar.is-vertical {
+  width: 8px !important;
+  right: 2px;
+  top: 4px;
+  bottom: 4px;
+  background: transparent !important;
+}
+
+/* 底部横向滑块隐藏，只保留竖向滚动条 */
+.library-panel .el-scrollbar__bar.is-horizontal {
+  display: none !important;
+}
+
+.library-panel .el-scrollbar__thumb {
+  background: #c5cad6 !important;
+  border-radius: 999px;
+}
+
+.library-panel .el-scrollbar__thumb:hover {
+  background: #a8b0c0 !important;
+}
+
+/* 隐藏原生条，只用 el-scrollbar；wrap 右侧预留轨道空间，避免内容被滑块挡住 */
+.library-panel .tree-scroll .el-scrollbar__wrap,
+.library-panel .reader-body .el-scrollbar__wrap {
+  scrollbar-width: none;
+  /* 轨道 8px + 右偏移 2px + 额外空隙 ≈ 18px */
+  padding-right: 18px !important;
+  box-sizing: border-box;
+}
+
+.library-panel .tree-scroll .el-scrollbar__wrap::-webkit-scrollbar,
+.library-panel .reader-body .el-scrollbar__wrap::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+/* 长行/长路径自动换行，不顶到滚动条 */
+.library-panel .tree-scroll .el-tree-node__label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.library-panel .reader-body .md-preview,
+.library-panel .reader-body .md-preview * {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.library-panel .reader-body .md-preview pre,
+.library-panel .reader-body .md-preview code {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.library-panel .reader-body .md-preview hr {
+  max-width: 100%;
 }
 
 .reader-empty {
@@ -632,6 +800,11 @@ textarea {
   background: #fff !important;
 }
 
+/* input-number 保持 Element Plus 默认圆角，避免四角被全局 12px 破坏 */
+.el-input-number .el-input__wrapper {
+  border-radius: var(--el-border-radius-base, 4px) !important;
+}
+
 .el-input__wrapper.is-focus,
 .el-textarea__inner:focus {
   box-shadow: 0 0 0 1px rgba(49, 204, 121, 0.45) inset, 0 0 0 4px rgba(49, 204, 121, 0.08) !important;
@@ -668,8 +841,8 @@ textarea {
 }
 
 .el-tag {
-  border-radius: 999px !important;
-  border: none !important;
+  /* 保持 Element Plus 默认圆角（非胶囊） */
+  border-radius: var(--el-border-radius-base, 4px) !important;
   font-weight: 500 !important;
 }
 
@@ -681,6 +854,29 @@ textarea {
 .el-progress-bar__inner {
   border-radius: 999px !important;
   background: linear-gradient(90deg, #31CC79, #60DB69) !important;
+}
+
+/* Tabs 激活色统一为品牌绿 */
+.el-tabs__item {
+  color: var(--text-secondary) !important;
+  font-weight: 550 !important;
+}
+
+.el-tabs__item:hover {
+  color: var(--primary) !important;
+}
+
+.el-tabs__item.is-active {
+  color: var(--primary) !important;
+  font-weight: 700 !important;
+}
+
+.el-tabs__active-bar {
+  background-color: var(--primary) !important;
+}
+
+.el-tabs__nav-wrap::after {
+  background-color: var(--border) !important;
 }
 
 .el-table {
@@ -736,9 +932,18 @@ textarea {
   .stat-row {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+  .library-panel {
+    height: auto;
+  }
   .library-layout {
     grid-template-columns: 1fr;
     height: auto;
+  }
+  .library-divider {
+    width: auto;
+    height: 0;
+    border-left: none;
+    border-top: 1px dashed var(--border);
   }
   .tree-panel,
   .reader-panel {
@@ -747,67 +952,413 @@ textarea {
   }
   .tree-scroll {
     max-height: 40vh;
+    height: 40vh;
   }
   .reader-body {
-    max-height: none;
-    overflow: visible;
+    max-height: 60vh;
+    height: 60vh;
   }
 }
 
+/* ========== Mobile / tablet shell ========== */
 @media (max-width: 900px) {
+  /* 关键架构：html/body 不滚；只有 .content 滚；底栏 fixed 盖住滚动区 */
   html,
   body {
-    overflow: auto;
+    height: 100% !important;
+    max-height: 100dvh !important;
+    overflow: hidden !important;
+    -webkit-text-size-adjust: 100%;
   }
+
+  #__nuxt {
+    height: 100% !important;
+    max-height: 100dvh !important;
+    overflow: hidden !important;
+  }
+
   .app-frame {
-    height: auto;
-    min-height: 100dvh;
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    min-height: 0 !important;
+    padding: 0 !important;
+    padding-bottom: 0 !important;
+    overflow: hidden !important;
+    box-sizing: border-box;
   }
+
   .app-shell {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto 1fr;
-    height: auto;
-    min-height: 100dvh;
-    max-height: none;
+    grid-template-columns: 1fr !important;
+    grid-template-rows: 1fr !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    min-height: 0 !important;
     border-radius: 0;
+    overflow: hidden !important;
   }
+
+  /* 底栏：不透、盖住内容滚动条 */
   .app-sidebar {
-    height: auto;
-    overflow: visible;
-    border-right: none;
-    border-bottom: 1px solid var(--border);
+    position: fixed !important;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 2000 !important;
+    height: calc(var(--mobile-nav-h) + var(--safe-bottom)) !important;
+    max-height: calc(var(--mobile-nav-h) + var(--safe-bottom)) !important;
+    padding: 0 4px var(--safe-bottom) !important;
+    flex-direction: row !important;
+    align-items: stretch;
+    gap: 0;
+    border-right: none !important;
+    border-top: 1px solid var(--border);
+    border-bottom: none !important;
+    background: #ffffff !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    box-shadow: 0 -4px 20px rgba(28, 39, 76, 0.08);
+    overflow: hidden !important;
   }
+
+  .app-brand,
+  .sidebar-promo {
+    display: none !important;
+  }
+
   .app-nav {
-    flex-direction: row;
-    overflow-x: auto;
-    flex: 0 0 auto;
-  }
-  .app-nav a {
-    white-space: nowrap;
-  }
-  .sidebar-promo { display: none; }
-  .app-main {
-    height: auto;
+    flex: 1 1 auto;
+    flex-direction: row !important;
+    overflow: hidden !important;
+    gap: 0;
+    padding: 0;
     min-height: 0;
-    overflow: visible;
+    height: var(--mobile-nav-h);
+    align-items: stretch;
   }
+
+  .app-nav a {
+    flex: 1 1 0;
+    min-width: 0;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 2px;
+    padding: 6px 2px 4px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.15;
+    white-space: nowrap;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+
+  .app-nav a span {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .app-nav a .el-icon {
+    font-size: 20px;
+  }
+
+  .app-nav a.router-link-active {
+    background: var(--primary-soft);
+    box-shadow: none;
+    color: var(--primary);
+    border-radius: 12px;
+  }
+
+  .app-nav a.router-link-active .el-icon {
+    color: var(--primary);
+  }
+
+  .app-main {
+    height: 100% !important;
+    max-height: 100% !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+    /* 给底栏腾空间，滚动条停在底栏上方 */
+    padding-bottom: calc(var(--mobile-nav-h) + var(--safe-bottom)) !important;
+    box-sizing: border-box !important;
+  }
+
   .content {
-    overflow: visible;
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    padding: 16px 14px 20px !important;
+    padding-left: max(14px, var(--safe-left)) !important;
+    padding-right: max(14px, var(--safe-right)) !important;
+    padding-bottom: 20px !important;
   }
-  .content,
+
   .topbar {
-    padding-left: 16px;
-    padding-right: 16px;
+    padding-left: 14px;
+    padding-right: 14px;
   }
+
+  .topbar-search {
+    display: none;
+  }
+
+  .page-header {
+    margin-bottom: 14px;
+    gap: 10px;
+  }
+
+  .page-header h1 {
+    font-size: 22px;
+  }
+
+  .page-header p {
+    font-size: 13px;
+  }
+
+  .panel {
+    padding: 14px 14px 16px;
+    border-radius: 14px;
+  }
+
   .stat-row {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
   }
-  .topbar-search { display: none; }
+
+  .stat-card {
+    padding: 12px 14px;
+  }
+
+  .stat-card .value {
+    font-size: 18px !important;
+  }
+
   .log-box {
     max-height: min(42vh, 360px);
   }
+
   .page-fill {
-    height: auto;
-    min-height: auto;
+    height: auto !important;
+    min-height: auto !important;
+    overflow: visible !important;
+  }
+
+  /* 任务页：同样只在 .content 内滚动，不解开 html/body */
+  html:has(.tasks-page),
+  body:has(.tasks-page),
+  #__nuxt:has(.tasks-page) {
+    height: 100% !important;
+    max-height: 100dvh !important;
+    overflow: hidden !important;
+  }
+
+  .app-frame:has(.tasks-page),
+  .app-shell:has(.tasks-page),
+  .app-main:has(.tasks-page) {
+    height: 100% !important;
+    max-height: 100% !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+  }
+
+  .app-frame:has(.tasks-page) {
+    padding-bottom: 0 !important;
+  }
+
+  .app-main:has(.tasks-page) {
+    padding-bottom: calc(var(--mobile-nav-h) + var(--safe-bottom)) !important;
+  }
+
+  .content:has(.tasks-page) {
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    height: auto !important;
+    max-height: none !important;
+    min-height: 0 !important;
+    display: block !important;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 20px !important;
+  }
+
+  .page-fill.tasks-page {
+    height: auto !important;
+    max-height: none !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    padding-bottom: 0 !important;
+  }
+
+  .tasks-page > .tasks-table-panel {
+    margin-bottom: 4px !important;
+  }
+
+  .schedule-panel .schedule-table-wrap,
+  .tasks-table-panel .tasks-table-wrap {
+    overflow-x: auto !important;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .schedule-panel .schedule-table,
+  .tasks-table-panel .tasks-table {
+    min-width: 0;
+  }
+
+  /* 知识库：上下堆叠 */
+  .page-fill:has(.library-panel) {
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+  }
+
+  .library-layout {
+    grid-template-columns: 1fr !important;
+    grid-template-rows: auto auto auto;
+    height: auto !important;
+    min-height: 0;
+  }
+
+  /* 上下堆叠时：目录与阅读区之间显示横向分割线 */
+  .library-divider {
+    display: block !important;
+    width: auto !important;
+    height: 0 !important;
+    align-self: stretch;
+    margin: 0 14px !important;
+    border: none !important;
+    border-top: 1px dashed var(--border-strong, #dfe3f0) !important;
+  }
+
+  .tree-panel,
+  .reader-panel {
+    height: auto !important;
+    min-height: 0;
+    padding: 14px !important;
+    overflow: hidden;
+  }
+
+  .tree-scroll {
+    height: min(38vh, 280px) !important;
+    max-height: min(38vh, 280px) !important;
+    flex: 0 0 auto !important;
+  }
+
+  .reader-panel .task-head {
+    margin-bottom: 10px;
+  }
+
+  .reader-body {
+    height: min(52vh, 420px) !important;
+    max-height: min(52vh, 420px) !important;
+    min-height: 200px !important;
+    flex: 0 0 auto !important;
+  }
+
+  .library-panel {
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    display: block !important;
+  }
+
+  .reader-empty,
+  .library-empty {
+    min-height: 180px !important;
+    height: auto !important;
+  }
+
+  .el-button {
+    min-height: 36px;
+  }
+
+  .el-input__wrapper,
+  .el-textarea__inner {
+    min-height: 40px;
+  }
+
+  .el-dialog {
+    width: min(92vw, 560px) !important;
+    margin: 8vh auto !important;
+  }
+
+  .el-drawer.rtl,
+  .el-drawer.ltr {
+    width: min(100vw, 460px) !important;
+  }
+
+  .el-message-box {
+    width: min(92vw, 440px) !important;
+  }
+
+  .mode-segmented {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    max-width: 100%;
+  }
+
+  .mode-segmented .el-segmented {
+    min-width: max-content;
+  }
+
+  .password-input-wrap {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .action-btn {
+    width: 100% !important;
+    max-width: 100%;
+  }
+
+  .action-btn-wrap {
+    width: 100%;
+  }
+}
+
+/* 更窄手机：统计卡单列 */
+@media (max-width: 480px) {
+  .stat-row {
+    grid-template-columns: 1fr !important;
+  }
+
+  .tasks-page .stat-row {
+    grid-template-columns: 1fr !important;
+  }
+
+  .page-header h1 {
+    font-size: 20px;
+  }
+
+  .content {
+    padding: 12px 12px 18px;
+  }
+
+  .panel {
+    padding: 12px 12px 14px;
+    border-radius: 12px;
+  }
+
+  .app-nav a {
+    font-size: 10px;
+    padding: 6px 1px 4px;
+  }
+
+  .app-nav a .el-icon {
+    font-size: 18px;
+  }
+}
+
+/* 任务页统计卡：平板 2 列 */
+@media (max-width: 900px) and (min-width: 481px) {
+  .tasks-page .stat-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   }
 }

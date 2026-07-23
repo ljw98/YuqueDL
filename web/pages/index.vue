@@ -3,7 +3,7 @@
     <div class="page-header">
       <div>
         <h1>下载知识库</h1>
-        <p>粘贴语雀链接，配置选项后即可开始。下载过程可实时查看进度与日志。</p>
+        <p>粘贴语雀链接，配置选项后即可开始。</p>
       </div>
     </div>
 
@@ -11,142 +11,158 @@
       <div class="stat-card">
         <div class="label">当前模式</div>
         <div class="value" style="font-size:22px;">{{ modeLabel }}</div>
-        <div class="hint">即时生效，无需额外确认</div>
+        <div class="hint">切换后立即生效</div>
       </div>
       <div class="stat-card">
         <div class="label">任务状态</div>
         <div class="value" style="font-size:22px;">{{ activeTask ? statusText(activeTask.status) : '空闲' }}</div>
-        <div class="hint">{{ activeTask ? `${activeTask.current || 0}/${activeTask.total || 0}` : '等待创建任务' }}</div>
+        <div class="hint">{{ activeTask ? `${activeTask.current || 0}/${activeTask.total || 0}` : '暂无进行中任务' }}</div>
       </div>
       <div class="stat-card">
-        <div class="label">输出目录</div>
-        <div class="value" style="font-size:18px;line-height:1.3;">data/downloads</div>
-        <div class="hint">服务端统一托管</div>
+        <div class="label">知识库</div>
+        <div class="value" style="font-size:22px;">{{ libraryCount }}</div>
+        <div class="hint">本地已下载数量</div>
       </div>
       <div class="stat-card">
         <div class="label">鉴权</div>
-        <div class="value" style="font-size:22px;">{{ form.token || hasSavedToken ? '已配置' : '公开库' }}</div>
-        <div class="hint">私有库请填写 Token</div>
+        <div class="value" style="font-size:22px;">{{ form.token || hasSavedToken ? '已配置' : '未配置' }}</div>
+        <div class="hint">私有库需 Token</div>
       </div>
     </div>
 
     <div class="task-config-grid">
-      <div class="panel task-config-card">
+      <div ref="newTaskCardRef" class="panel task-config-card">
         <h3 class="panel-title">新建任务</h3>
-        <el-form label-position="top" @submit.prevent>
-          <el-form-item label="下载模式">
-            <div class="mode-segmented">
-              <el-segmented v-model="form.type" :options="[
-                { label: '整库', value: 'book' },
-                { label: '单/多文档', value: 'docs' },
-                { label: '批量知识库', value: 'batch' },
-                { label: '账号全部', value: 'user' },
-              ]" />
-            </div>
-          </el-form-item>
+        <div class="task-card-body">
+          <el-form label-position="top" @submit.prevent>
+            <el-form-item label="访问类型">
+              <div class="mode-segmented">
+                <el-segmented
+                  v-model="accessType"
+                  :options="accessTypeOptions"
+                  :disabled="form.type === 'user'"
+                />
+              </div>
+            </el-form-item>
 
-          <el-form-item v-if="form.type !== 'user'" :label="urlLabel">
-            <el-input
-              v-model="form.urls"
-              type="textarea"
-              resize="none"
-              :rows="3"
-              :placeholder="urlPlaceholder"
-            />
-          </el-form-item>
+            <el-form-item label="下载模式">
+              <div class="mode-segmented">
+                <el-segmented v-model="form.type" :options="[
+                  { label: '整库', value: 'book' },
+                  { label: '单/多文档', value: 'docs' },
+                  { label: '批量知识库', value: 'batch' },
+                  { label: '账号全部', value: 'user' },
+                ]" />
+              </div>
+            </el-form-item>
 
-          <el-form-item label="公开密码（如有）">
-            <el-input v-model="form.password" type="password" show-password />
-          </el-form-item>
+            <el-form-item v-if="form.type !== 'user'" :label="urlLabel">
+              <el-input
+                v-model="form.urls"
+                type="textarea"
+                resize="none"
+                :rows="3"
+                :placeholder="urlPlaceholder"
+              />
+            </el-form-item>
 
-          <el-button type="primary" size="large" round :loading="submitting" @click="startDownload">
-            开始下载
-          </el-button>
-        </el-form>
-      </div>
+            <!-- 公开：可选阅读密码，不需要 Token -->
+            <el-form-item v-if="accessType === 'public'" label="访问密码">
+              <div class="password-input-wrap">
+                <el-input
+                  v-model="form.password"
+                  type="password"
+                  show-password
+                  size="large"
+                  placeholder="有阅读密码时填写，没有则留空"
+                />
+              </div>
+            </el-form-item>
 
-      <div class="panel task-config-card">
-        <h3 class="panel-title">默认配置</h3>
-        <p class="muted" style="margin:-6px 0 16px;">这里保存新任务的默认值，新建任务会直接使用。</p>
-        <el-form label-position="top">
-          <el-form-item label="语雀 Token">
-            <el-input
-              v-model="form.token"
-              type="password"
-              show-password
-              :placeholder="hasSavedToken ? '已保存（输入新值可覆盖）' : '未设置'"
-              @paste="onTokenPaste"
-            />
-          </el-form-item>
-          <el-form-item label="Cookie Key">
-            <el-input v-model="form.key" placeholder="_yuque_session" />
-          </el-form-item>
-          <el-form-item label="默认选项">
-            <div class="option-chips">
-              <el-checkbox v-model="form.ignoreImg" border>忽略图片</el-checkbox>
-              <el-checkbox v-model="form.ignoreAttachments" border>忽略附件</el-checkbox>
-              <el-checkbox v-model="form.incremental" border>增量下载</el-checkbox>
-              <el-checkbox v-model="form.toc" border>生成 TOC</el-checkbox>
-              <el-checkbox v-model="form.hideFooter" border>隐藏页脚</el-checkbox>
-              <el-checkbox v-model="form.convertMarkdownVideoLinks" border>视频转 video</el-checkbox>
-            </div>
-          </el-form-item>
-          <el-button type="primary" round :loading="saving" @click="saveSettings">保存设置</el-button>
-        </el-form>
-      </div>
-    </div>
-
-    <div v-if="activeTask" class="panel">
-      <div class="task-head">
-        <h3 class="panel-title" style="margin:0;">当前任务</h3>
-        <div style="display:flex;gap:8px;align-items:center;">
-          <el-tag :type="statusType(activeTask.status)" effect="light">{{ statusText(activeTask.status) }}</el-tag>
-          <el-button
-            v-if="activeTask.status === 'running' || activeTask.status === 'queued'"
-            size="small"
-            round
-            @click="cancelActive"
-          >
-            取消
-          </el-button>
-          <el-button
-            v-if="activeTask.status === 'success'"
-            size="small"
-            round
-            type="primary"
-            @click="goLibrary"
-          >
-            查看知识库
-          </el-button>
+            <!-- 私有：展示 Token 状态，引导去右侧配置 -->
+            <el-form-item v-else label="语雀 Token">
+              <div class="token-status-box" :class="tokenReady ? 'is-ready' : 'is-missing'">
+                <div class="token-status-main">
+                  <span class="token-status-label">{{ tokenReady ? '已配置' : '未配置' }}</span>
+                  <span class="token-status-meta">{{ tokenStatusMeta }}</span>
+                </div>
+                <div class="field-hint" style="margin-top:8px;">
+                  请在右侧「Token 设置」填写并保存，也可临时粘贴后直接下载。
+                </div>
+              </div>
+            </el-form-item>
+          </el-form>
+        </div>
+        <div class="task-card-footer">
+          <div class="action-btn-wrap">
+            <el-button class="action-btn" type="primary" size="large" round :loading="submitting" @click="startDownload">
+              开始下载
+            </el-button>
+          </div>
         </div>
       </div>
 
-      <el-progress
-        :percentage="progressPercent"
-        :stroke-width="10"
-        :status="activeTask.status === 'failed' ? 'exception' : activeTask.status === 'success' ? 'success' : undefined"
-      />
-      <div class="progress-meta">
-        <span>{{ activeTask.current || 0 }}/{{ activeTask.total || 0 }}</span>
-        <span v-if="activeTask.message">{{ activeTask.message }}</span>
-      </div>
-
-      <div class="log-box" ref="logBoxRef">
-        <div
-          v-for="(line, idx) in logs"
-          :key="idx"
-          :class="`log-line-${line.level}`"
-        >
-          [{{ formatTime(line.ts) }}] {{ line.message }}
+      <div ref="settingsCardRef" class="panel task-config-card">
+        <h3 class="panel-title">Token 设置</h3>
+        <p class="panel-desc">
+          登录语雀后按 F12 打开开发者工具 → Application → Cookies → <code>https://www.yuque.com</code> → 复制 <code>_yuque_session</code> 的 Value。
+        </p>
+        <div class="task-card-body">
+          <el-form label-position="top">
+            <el-form-item label="语雀 Token">
+              <el-input
+                v-model="form.token"
+                type="password"
+                show-password
+                size="large"
+                :placeholder="tokenPlaceholder"
+                @paste="onTokenPaste"
+              />
+            </el-form-item>
+            <el-form-item label="Cookie Key">
+              <div class="password-input-wrap">
+                <el-input v-model="form.key" size="large" placeholder="_yuque_session" />
+              </div>
+            </el-form-item>
+            <el-form-item label="默认选项">
+              <div class="option-chips">
+                <el-tooltip content="跳过图片下载，正文保留原图链接" placement="top">
+                  <el-checkbox v-model="form.ignoreImg" border>忽略图片</el-checkbox>
+                </el-tooltip>
+                <el-tooltip content="跳过所有附件与音视频；若只要忽略部分类型，请关闭并填写下方后缀" placement="top">
+                  <el-checkbox v-model="form.ignoreAllAttachments" border>忽略附件</el-checkbox>
+                </el-tooltip>
+                <el-tooltip content="只下载有变更的文档，适合反复同步同一库" placement="top">
+                  <el-checkbox v-model="form.incremental" border>增量下载</el-checkbox>
+                </el-tooltip>
+                <el-tooltip content="在 Markdown 顶部生成目录" placement="top">
+                  <el-checkbox v-model="form.toc" border>生成 TOC</el-checkbox>
+                </el-tooltip>
+                <el-tooltip content="不在文末写入更新时间、原文链接等" placement="top">
+                  <el-checkbox v-model="form.hideFooter" border>隐藏页脚</el-checkbox>
+                </el-tooltip>
+                <el-tooltip content="把视频链接写成 video 标签，方便本地预览" placement="top">
+                  <el-checkbox v-model="form.convertMarkdownVideoLinks" border>视频改标签</el-checkbox>
+                </el-tooltip>
+              </div>
+            </el-form-item>
+            <el-form-item v-if="!form.ignoreAllAttachments" label="忽略附件后缀">
+              <div class="password-input-wrap">
+                <el-input
+                  v-model="form.ignoreAttachmentExts"
+                  size="large"
+                  placeholder="例如 mp4,pdf,zip（留空则下载全部）"
+                />
+              </div>
+            </el-form-item>
+          </el-form>
         </div>
-        <div v-if="!logs.length" class="muted">等待日志…</div>
+        <div class="task-card-footer">
+          <div class="action-btn-wrap">
+            <el-button class="action-btn" type="primary" size="large" round :loading="saving" @click="saveSettings">保存设置</el-button>
+          </div>
+        </div>
       </div>
-    </div>
-
-    <div v-if="activeTask" class="panel" style="text-align:center;padding:24px;">
-      <el-button type="primary" round @click="navigateTo('/tasks')">
-        前往任务中心查看详情
-      </el-button>
     </div>
   </div>
 </template>
@@ -159,21 +175,41 @@ const form = reactive({
   key: '',
   password: '',
   ignoreImg: false,
-  ignoreAttachments: false,
+  ignoreAllAttachments: false,
+  ignoreAttachmentExts: '',
   incremental: false,
   toc: false,
   hideFooter: false,
   convertMarkdownVideoLinks: false,
 })
 
+/** 访问类型：公开库不需要 Token；私有库需要。账号全部强制私有 */
+const accessType = ref<'public' | 'private'>('public')
+const accessTypeOptions = [
+  { label: '公开', value: 'public' },
+  { label: '私有', value: 'private' },
+]
+
 const submitting = ref(false)
 const activeTask = ref<any>(null)
-const logs = ref<Array<{ ts: number; level: string; message: string }>>([])
-const logBoxRef = ref<HTMLElement | null>(null)
+const newTaskCardRef = ref<HTMLElement | null>(null)
+const settingsCardRef = ref<HTMLElement | null>(null)
 const hasSavedToken = ref(false)
+const savedTokenHint = ref("")
+const libraryCount = ref(0)
+const tokenPlaceholder = computed(() => {
+  if (hasSavedToken.value && savedTokenHint.value) return savedTokenHint.value
+  if (hasSavedToken.value) return "已保存，输入新值可覆盖"
+  return "未设置"
+})
 const saving = ref(false)
-let es: EventSource | null = null
 
+const tokenReady = computed(() => Boolean(form.token || hasSavedToken.value))
+const tokenStatusMeta = computed(() => {
+  if (form.token) return '将使用本次输入的 Token'
+  if (hasSavedToken.value) return savedTokenHint.value || '将使用已保存的 Token'
+  return '请先在右侧配置'
+})
 const modeLabel = computed(() => ({
   book: '整库下载',
   docs: '文档下载',
@@ -193,63 +229,54 @@ const urlPlaceholder = computed(() => {
   return 'https://www.yuque.com/xxx/yyy'
 })
 
-const progressPercent = computed(() => {
-  const t = activeTask.value
-  if (!t || !t.total) return t?.status === 'success' ? 100 : 0
-  return Math.min(100, Math.round((t.current / t.total) * 100))
-})
-
 function statusText(s: string) {
   return ({ queued: '排队中', running: '下载中', success: '成功', failed: '失败', cancelled: '已取消' } as any)[s] || s
 }
-function statusType(s: string) {
-  return ({ queued: 'info', running: '', success: 'success', failed: 'danger', cancelled: 'warning' } as any)[s] || 'info'
-}
-function formatTime(ts: number) {
-  return new Date(ts).toLocaleTimeString()
-}
 
-function scrollLog() {
+function syncCardHeights() {
   nextTick(() => {
-    if (logBoxRef.value) logBoxRef.value.scrollTop = logBoxRef.value.scrollHeight
+    const left = newTaskCardRef.value
+    const right = settingsCardRef.value
+    if (!left || !right) return
+    if (window.innerWidth <= 1100) {
+      left.style.minHeight = ''
+      right.style.minHeight = ''
+      return
+    }
+    left.style.minHeight = ''
+    right.style.minHeight = ''
+    const height = Math.max(left.offsetHeight, right.offsetHeight)
+    left.style.minHeight = `${height}px`
+    right.style.minHeight = `${height}px`
   })
 }
 
-function closeEs() {
-  if (es) {
-    es.close()
-    es = null
+
+function parseIgnoreAttachments(value: unknown) {
+  if (value === true) {
+    form.ignoreAllAttachments = true
+    form.ignoreAttachmentExts = ''
+    return
   }
+  form.ignoreAllAttachments = false
+  if (typeof value === 'string' && value.trim()) {
+    form.ignoreAttachmentExts = value
+      .split(/[,，\s]+/)
+      .map((part) => part.trim().replace(/^\./, '').toLowerCase())
+      .filter(Boolean)
+      .join(',')
+    return
+  }
+  form.ignoreAttachmentExts = ''
 }
 
-function watchTask(id: string) {
-  closeEs()
-  es = new EventSource(`/api/tasks/${id}/events`)
-  es.onmessage = (ev) => {
-    try {
-      const data = JSON.parse(ev.data)
-      if (data.type === 'task' || data.type === 'done') {
-        activeTask.value = data.task
-      } else if (data.type === 'progress') {
-        if (activeTask.value) {
-          activeTask.value.current = data.current
-          activeTask.value.total = data.total
-          activeTask.value.message = data.message
-        }
-      } else if (data.type === 'log') {
-        logs.value.push(data.log)
-        if (logs.value.length > 400) logs.value = logs.value.slice(-400)
-        scrollLog()
-      }
-    } catch {
-      // ignore
-    }
-  }
-  es.onerror = () => {
-    if (activeTask.value && ['success', 'failed', 'cancelled'].includes(activeTask.value.status)) {
-      closeEs()
-    }
-  }
+function buildIgnoreAttachments(): boolean | string {
+  if (form.ignoreAllAttachments) return true
+  const cleaned = form.ignoreAttachmentExts
+    .split(/[,，\s]+/)
+    .map((part) => part.trim().replace(/^\./, '').toLowerCase())
+    .filter(Boolean)
+  return cleaned.length ? cleaned.join(',') : false
 }
 
 async function loadSettingsDefaults() {
@@ -257,32 +284,60 @@ async function loadSettingsDefaults() {
     const res = await $fetch<{ settings: any }>('/api/settings')
     const s = res.settings || {}
     form.ignoreImg = Boolean(s.ignoreImg)
-    form.ignoreAttachments = Boolean(s.ignoreAttachments)
+    parseIgnoreAttachments(s.ignoreAttachments)
     form.incremental = Boolean(s.incremental)
     form.toc = Boolean(s.toc)
     form.hideFooter = Boolean(s.hideFooter)
     form.convertMarkdownVideoLinks = Boolean(s.convertMarkdownVideoLinks)
     form.key = s.key || ''
     hasSavedToken.value = Boolean(s.hasToken)
+    savedTokenHint.value = s.hasToken && s.token && String(s.token).includes("****")
+      ? String(s.token)
+      : (s.hasToken ? "••••••••••••" : "")
   } catch {
     // ignore
   }
 }
 
+async function loadLibraryCount() {
+  try {
+    const res = await $fetch<{ books: any[] }>('/api/library')
+    libraryCount.value = Array.isArray(res.books) ? res.books.length : 0
+  } catch {
+    libraryCount.value = 0
+  }
+}
+
 async function startDownload() {
+  if (form.type !== 'user' && !String(form.urls || '').trim()) {
+    ElMessage.warning('请先填写知识库或文档 URL')
+    return
+  }
+  if (accessType.value === 'private' && !tokenReady.value) {
+    ElMessage.warning('私有库需要语雀 Token，请先在右侧填写')
+    return
+  }
+
   submitting.value = true
   try {
     const options: Record<string, any> = {
       ignoreImg: form.ignoreImg,
-      ignoreAttachments: form.ignoreAttachments,
+      ignoreAttachments: buildIgnoreAttachments(),
       incremental: form.incremental,
       toc: form.toc,
       hideFooter: form.hideFooter,
       convertMarkdownVideoLinks: form.convertMarkdownVideoLinks,
     }
-    if (form.token) options.token = form.token
-    if (form.key) options.key = form.key
-    if (form.password) options.password = form.password
+
+    if (accessType.value === 'private') {
+      // 私有：使用本次 Token 或落盘已保存 Token（后端 createTask 会回落 settings.token）
+      if (form.token) options.token = form.token
+      if (form.key) options.key = form.key
+    } else {
+      // 公开：显式清空 token，避免后端回落到已保存的私有 Token
+      options.token = ''
+      if (form.password) options.password = form.password
+    }
 
     const res = await $fetch<{ task: any }>('/api/tasks', {
       method: 'POST',
@@ -293,29 +348,13 @@ async function startDownload() {
       },
     })
     activeTask.value = res.task
-    logs.value = res.task.logs || []
-    watchTask(res.task.id)
-    ElMessage.success('任务已创建')
+    syncCardHeights()
+    ElMessage.success('任务已创建，请到「任务」页查看')
   } catch (e: any) {
     ElMessage.error(e?.data?.statusMessage || e?.message || '创建失败')
   } finally {
     submitting.value = false
   }
-}
-
-async function cancelActive() {
-  if (!activeTask.value?.id) return
-  try {
-    const res = await $fetch<{ task: any }>(`/api/tasks/${activeTask.value.id}/cancel`, { method: 'POST' })
-    activeTask.value = res.task
-    ElMessage.success('已发送取消')
-  } catch (e: any) {
-    ElMessage.error(e?.data?.statusMessage || e?.message || '取消失败')
-  }
-}
-
-function goLibrary() {
-  navigateTo('/library')
 }
 
 async function saveSettings() {
@@ -324,7 +363,7 @@ async function saveSettings() {
     const body: any = {
       key: form.key,
       ignoreImg: form.ignoreImg,
-      ignoreAttachments: form.ignoreAttachments,
+      ignoreAttachments: buildIgnoreAttachments(),
       incremental: form.incremental,
       toc: form.toc,
       hideFooter: form.hideFooter,
@@ -336,7 +375,7 @@ async function saveSettings() {
     if (form.token) form.token = ''
     ElMessage.success('已保存')
   } catch (e: any) {
-    ElMessage.error(e?.message || '保存失败')
+    ElMessage.error(e?.data?.statusMessage || e?.message || '保存失败')
   } finally {
     saving.value = false
   }
@@ -363,11 +402,43 @@ function onTokenPaste(e: ClipboardEvent) {
   }
 }
 
-onMounted(loadSettingsDefaults)
-onBeforeUnmount(closeEs)
+watch(() => form.type, (type) => {
+  // 账号全部必须登录态
+  if (type === 'user') accessType.value = 'private'
+  syncCardHeights()
+})
+watch(accessType, (val) => {
+  if (val === 'private') form.password = ''
+  syncCardHeights()
+})
+
+onMounted(() => {
+  loadSettingsDefaults()
+  loadLibraryCount()
+  syncCardHeights()
+  window.addEventListener('resize', syncCardHeights)
+})
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', syncCardHeights)
+})
 </script>
 
 <style scoped>
+.panel-desc {
+  margin: -6px 0 16px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+}
+/* 全局 code 标签样式只挂在 .md-preview 下，这里补一份可见的行内 code */
+.panel-desc code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  background: #e8f9f0;
+  color: #2db86e;
+  padding: 0.22em 0.55em;
+  border-radius: 6px;
+}
 .mode-segmented :deep(.el-segmented) {
   --el-segmented-item-selected-color: #fff;
   --el-segmented-item-selected-bg-color: #31cc79;
@@ -383,12 +454,23 @@ onBeforeUnmount(closeEs)
 }
 .task-config-grid {
   display: grid;
+  align-items: stretch;
   gap: 20px;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   width: 100%;
 }
 .task-config-card {
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.task-card-body {
+  flex: 1;
+}
+.task-config-card .el-form {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 .task-config-card .option-chips {
   gap: 8px;
@@ -399,9 +481,87 @@ onBeforeUnmount(closeEs)
 .task-config-card .el-form-item:last-of-type {
   margin-bottom: 0;
 }
+.task-card-footer {
+  margin-top: auto;
+  padding-top: 16px;
+}
+.action-btn-wrap {
+  margin-top: 0;
+}
+.password-input-wrap {
+  width: 300px;
+  max-width: 100%;
+}
+.password-input-wrap :deep(.el-input) {
+  width: 100%;
+}
+.action-btn {
+  width: 120px;
+  height: 40px;
+  line-height: 40px;
+  padding-top: 0;
+  padding-bottom: 0;
+}
 @media (max-width: 1100px) {
   .task-config-grid {
     grid-template-columns: 1fr;
+  }
+  .task-config-card {
+    height: auto;
+  }
+  .task-config-card .el-form {
+    height: auto;
+  }
+  .task-card-footer {
+    margin-top: 0;
+  }
+}
+.option-chips :deep(.el-tooltip__trigger) {
+  display: inline-flex;
+}
+.field-hint {
+  margin-top: 8px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.token-status-box {
+  width: 100%;
+  border: 1px solid var(--border-strong, #dfe3f0);
+  border-radius: 12px;
+  padding: 12px 14px;
+  background: #fafbfc;
+}
+.token-status-box.is-ready {
+  border-color: rgba(49, 204, 121, 0.45);
+  background: #f3fbf6;
+}
+.token-status-box.is-missing {
+  border-color: rgba(230, 162, 60, 0.45);
+  background: #fffaf0;
+}
+.token-status-main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px 12px;
+}
+.token-status-label {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary, #1f2329);
+}
+.token-status-meta {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+@media (max-width: 480px) {
+  .stat-row {
+    grid-template-columns: 1fr;
+  }
+  .mode-segmented :deep(.el-segmented__item) {
+    padding: 0 10px;
   }
 }
 </style>

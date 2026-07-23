@@ -143,3 +143,20 @@ temp
 web/.nuxt/
 web/.output/
 web/node_modules/
+
+# accidental launch artifacts / debug dumps
+web/--port/
+web-debug-*.png
+web/tmp-*.png
+web/tmp-*.py
+web/pages/_backup/
+web/node-compile-cache/
+web/python3/
+web/.tmp-test-write/
+data/.secret
+# runtime instance lock
+data/instance.lock
+# local downloaded knowledge bases (keep settings/jobs/schedules out of repo)
+data/downloads/
+# materialized ZIP for MCP / open export handoff
+data/exports/

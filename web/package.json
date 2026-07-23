@@ -7,9 +7,11 @@
     "dev": "nuxt dev --host 0.0.0.0 --port 8787",
     "generate": "nuxt generate",
     "preview": "nuxt preview --host 0.0.0.0 --port 8787",
-    "postinstall": "nuxt prepare"
+    "postinstall": "nuxt prepare",
+    "test:unit": "node tests/security-basics.mjs && node tests/classify-error.mjs && node tests/task-options.mjs"
   },
   "dependencies": {
+    "@element-plus/icons-vue": "^2.3.2",
     "@element-plus/nuxt": "^1.1.5",
     "element-plus": "^2.14.3",
     "highlight.js": "^11.11.1",
@@ -21,6 +23,7 @@
   },
   "devDependencies": {
     "@types/markdown-it": "^14.1.2",
-    "sass": "^1.101.0"
+    "sass": "^1.101.0",
+    "typescript": "^5.4.5"
   }
 }

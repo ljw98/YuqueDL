@@ -136,11 +136,21 @@ function normalizeRequestError(e: any) {
   return new Error(errMsg)
 }
 
+function needsPasswordVerify(jsonData?: IYuqueAppData) {
+  const { targetType, needVerifyTargetId } = jsonData?.matchCondition || {}
+  return Boolean(targetType && needVerifyTargetId)
+}
+
 export const getKnowledgeBaseInfo: TGetKnowledgeBaseInfo = async (url, headerParams) => {
   try {
     const { html } = await getPageHtml(url, headerParams)
     const jsonData = parseAppData(html)
-    if (!jsonData?.book) return {}
+    if (!jsonData?.book) {
+      if (needsPasswordVerify(jsonData)) {
+        throw new Error('该知识库需要访问密码，请填写「访问密码」后重试')
+      }
+      return {}
+    }
     return {
       bookId: jsonData.book.id,
       bookSlug: jsonData.book.slug,
@@ -183,7 +193,12 @@ export const getDocInfoFromUrl: TGetDocInfoFromUrl = async (url, headerParams) =
   try {
     const { html } = await getPageHtml(url, headerParams)
     const jsonData = parseAppData(html)
-    if (!jsonData?.doc) return {}
+    if (!jsonData?.doc) {
+      if (needsPasswordVerify(jsonData)) {
+        throw new Error('该文档需要访问密码，请填写「访问密码」后重试')
+      }
+      return {}
+    }
     return {
         docId: jsonData.doc.id,
         docSlug: jsonData.doc.slug,

@@ -2,6 +2,8 @@ import { mkdir } from 'node:fs/promises'
 import path from 'node:path'
 import Summary from './parse/Summary'
 import { getDocInfoFromUrl, getKnowledgeBaseInfo, getUserBooks, verifyPublicPassword } from './api'
+
+export { getUserBooks, getKnowledgeBaseInfo, verifyPublicPassword }
 import { fixPath } from './parse/fix'
 import { ProgressBar, colorize, isValidUrl, logger } from './utils'
 import { downloadArticleList } from './download/list'
@@ -42,7 +44,13 @@ export async function main(url: string, options: ICliOptions, hooks?: IDownloadH
     token: options.token,
     key: options.key
   })
-  if (!bookId) throw new Error('No found book id')
+  if (!bookId) {
+    throw new Error(
+      options.password
+        ? '未找到知识库信息，请检查链接是否正确，或密码/Token 是否有效'
+        : '未找到知识库信息。若该知识库需要访问密码，请填写「访问密码」后重试'
+    )
+  }
   if (!tocList || tocList.length === 0) throw new Error('No found toc list')
   const bookPath = path.resolve(options.distDir, bookName ? fixPath(bookName) : String(bookId))
 
@@ -130,11 +138,11 @@ export async function downloadBooksFromUrls(urls: string[], options: ICliOptions
   const totalBooks = bookList.length
   logger.info(`批量下载 ${totalBooks} 个知识库\n`)
 
-  await downloadBatch(bookList, options)
+  await downloadBatch(bookList, options, [], undefined)
 }
 
 /** 下载用户的所有知识库 */
-export async function downloadUserBooks(options: ICliOptions) {
+export async function downloadUserBooks(options: ICliOptions, hooks?: IDownloadHooks) {
   if (!options.token) {
     throw new Error('Token is required for downloading all books. Use -t <token>')
   }
@@ -146,6 +154,7 @@ export async function downloadUserBooks(options: ICliOptions) {
 
   if (books.length === 0) {
     logger.warn('未找到任何知识库')
+    hooks?.onLog?.('warn', '未找到任何知识库')
     return
   }
 
@@ -168,23 +177,40 @@ export async function downloadUserBooks(options: ICliOptions) {
   const totalBooks = bookList.length
   const totalDocs = _books.reduce((sum, b) => sum + (b.items_count || 0), 0)
   logger.info(`找到 ${totalBooks} 个知识库，共 ${totalDocs} 篇文档\n`)
-  await downloadBatch(bookList, options, failedBooks)
+  hooks?.onLog?.('info', `找到 ${totalBooks} 个知识库，共 ${totalDocs} 篇文档`)
+  await downloadBatch(bookList, options, failedBooks, hooks)
 }
 
 type TFailedBooks = Array<{ url: string; error: string }>
-async function downloadBatch(bookList: string[], options: ICliOptions, failedBooks: TFailedBooks = []) {
+async function downloadBatch(
+  bookList: string[],
+  options: ICliOptions,
+  failedBooks: TFailedBooks = [],
+  hooks?: IDownloadHooks,
+) {
   const successBooks: string[] = []
   const total = bookList.length + failedBooks.length
   for (let i = 0; i < bookList.length; i++) {
+    if (hooks?.signal?.aborted) {
+      throw new Error('Download aborted')
+    }
     const url = bookList[i]
     console.log(colorize(colorize(`[${i + 1}/${total}] 下载: `, 'bold') + `${url}`, 'magenta'))
     console.log('')
+    hooks?.onLog?.('info', `[${i + 1}/${total}] 下载: ${url}`)
+    hooks?.onProgress?.({
+      current: i,
+      total,
+      phase: 'book',
+      message: `下载知识库 ${i + 1}/${total}`,
+    })
     try {
-      await main(url, options)
+      await main(url, options, hooks)
       successBooks.push(url)
     } catch (e) {
       const errorMsg = e.message || 'unknown error'
       logger.error(`✕ 下载失败: ${url} — ${errorMsg}`)
+      hooks?.onLog?.('error', `下载失败: ${url} — ${errorMsg}`)
       failedBooks.push({ url, error: errorMsg })
     }
   }
@@ -200,7 +226,7 @@ async function downloadBatch(bookList: string[], options: ICliOptions, failedBoo
   }
 }
 
-export async function downloadDocsFromUrls(urls: string[], options: ICliOptions) {
+export async function downloadDocsFromUrls(urls: string[], options: ICliOptions, hooks?: IDownloadHooks) {
   // 处理 cac 库单个URL时返回字符串的情况
   const urlArray = Array.isArray(urls) ? urls : [urls]
 
@@ -219,14 +245,20 @@ export async function downloadDocsFromUrls(urls: string[], options: ICliOptions)
   const distPath = path.resolve(options.distDir)
   await mkdir(distPath, { recursive: true })
 
-  const progressBar = new ProgressBar(distPath, total, false, true)
+  const silent = Boolean(hooks)
+  const progressBar = new ProgressBar(distPath, total, false, true, hooks, silent)
   await progressBar.init()
+  hooks?.onLog?.('info', `开始下载 ${total} 篇文档`)
+  hooks?.onProgress?.({ current: 0, total, phase: 'start', message: '开始下载文档' })
 
   let failCount = 0
   const failedDocs: Array<{ url: string; error: string }> = []
   const successDocs: string[]  = []
 
   for (let i = 0; i < urlArray.length; i++) {
+    if (hooks?.signal?.aborted) {
+      throw new Error('Download aborted')
+    }
     const url = urlArray[i]
     let progressItem: IProgressItem | undefined
     try {
@@ -246,17 +278,34 @@ export async function downloadDocsFromUrls(urls: string[], options: ICliOptions)
       } = docInfo
 
       if (!docId || !bookId || !docSlug) {
-        throw new Error('Failed to get document info from URL')
+        throw new Error(
+          options.password
+            ? '无法获取文档信息，请检查链接是否正确，或密码/Token 是否有效'
+            : '无法获取文档信息。若该文档需要访问密码，请填写「访问密码」后重试'
+        )
       }
 
-      const fileName = fixPath(docTitle || docSlug)
-      const savePath = distPath
-      const saveFilePath = path.resolve(distPath, `${fileName}.md`)
+      // 按知识库分层保存，避免不同库同名文档互相覆盖
+      const bookDirName = fixPath(bookSlug || String(bookId))
+      const savePath = path.resolve(distPath, bookDirName)
+      await mkdir(savePath, { recursive: true })
+
+      let fileName = fixPath(docTitle || docSlug)
+      let saveFilePath = path.resolve(savePath, `${fileName}.md`)
+      // 同目录重名时追加 docId，彻底避免覆盖
+      try {
+        const { access } = await import('node:fs/promises')
+        await access(saveFilePath)
+        fileName = `${fileName}-${docId}`
+        saveFilePath = path.resolve(savePath, `${fileName}.md`)
+      } catch {
+        // file not exists, keep original name
+      }
 
       progressItem = {
-        path: `${fileName}.md`,
-        pathTitleList: [fileName],
-        pathIdList: [String(docId)],
+        path: `${bookDirName}/${fileName}.md`,
+        pathTitleList: [bookDirName, fileName],
+        pathIdList: [String(bookId), String(docId)],
         toc: {
           type: 'DOC',
           title: docTitle || docSlug,
@@ -310,11 +359,20 @@ export async function downloadDocsFromUrls(urls: string[], options: ICliOptions)
 
   successDocs.forEach(docsPath => {
     logger.info(`√ 已完成: ${docsPath}`)
+    hooks?.onLog?.('info', `已完成: ${docsPath}`)
   })
   if (failCount > 0) {
     failedDocs.forEach(({ url, error }) => {
       logger.error(`✕ 下载失败: ${url}`)
       logger.error(`———— ${error}`)
+      hooks?.onLog?.('error', `下载失败: ${url} — ${error}`)
     })
   }
+  hooks?.onProgress?.({
+    current: total - failCount,
+    total,
+    phase: 'done',
+    message: failCount > 0 ? `完成，失败 ${failCount} 篇` : '文档下载完成',
+  })
+  return { successCount: successDocs.length, failCount }
 }

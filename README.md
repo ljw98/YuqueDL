@@ -14,6 +14,58 @@
 npm i -g yuque-dl
 ```
 
+
+
+## Web 控制台（可视化）
+
+本仓库内置 Nuxt Web 控制台，支持任务管理、实时日志、知识库预览、定时同步、ZIP 导出、Open API / MCP。
+
+```bash
+# 安装依赖
+pnpm install
+pnpm --dir web install
+
+# 构建 core + 启动开发服（默认 8787）
+pnpm run dev:web
+
+# 或生产构建
+pnpm run build:web
+pnpm run start:web
+```
+
+打开 http://localhost:8787/
+
+### Docker（推荐部署）
+
+```bash
+docker compose up -d --build
+# http://localhost:8787/
+```
+
+详见 [docs/DOCKER.md](./docs/DOCKER.md)（含 `Dockerfile` / `docker-compose.yml` 模板）。
+
+常用环境变量：
+
+| 变量 | 说明 |
+|------|------|
+| `YUQUE_DL_ACCESS_PASSWORD` | 控制台访问密码 |
+| `YUQUE_DL_SECRET` | 加密/会话密钥 |
+| `YUQUE_DL_DATA` | 数据目录（默认仓库内 `data/`，Docker 常用 `/data`） |
+| `YUQUE_DL_COOKIE_SECURE=1` | HTTPS 下开启 Secure Cookie |
+| `YUQUE_DL_TRUST_PROXY=1` | 可信反代后才信任 X-Forwarded-For |
+| `YUQUE_DL_STRICT_SINGLE_INSTANCE=1` | 与存活 instance.lock 冲突时拒绝加载队列 |
+| `YUQUE_DL_CORE` | 自定义 core 入口路径 |
+
+> 任务队列为**单实例内存队列**（状态会落盘到 `data/jobs.json`）。请避免多个进程共享同一 `data` 目录同时跑任务。
+
+更多说明：
+
+- [web/README.md](./web/README.md) — 控制台功能与 API
+- [docs/PROJECT.md](./docs/PROJECT.md) — 项目架构与边界
+- [docs/DOCKER.md](./docs/DOCKER.md) — 容器部署
+- [docs/GET_TOEKN.md](./docs/GET_TOEKN.md) — 如何获取 `_yuque_session`
+- [docs/AUDIT_2026-07-23.md](./docs/AUDIT_2026-07-23.md) — 最新安全/冒烟审计
+
 ## Usage
 
 ```bash

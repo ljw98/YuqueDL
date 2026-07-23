@@ -71,7 +71,6 @@
     "axios": "^1.4.0",
     "cac": "^6.7.14",
     "cli-progress": "^3.12.0",
-    "dev": "^0.1.5",
     "log4js": "^6.9.1",
     "markdown-toc": "^1.2.0",
     "mdast-util-from-markdown": "^2.0.1",
@@ -80,10 +79,12 @@
     "pako": "1.0.11",
     "pull-md-img": "^0.0.69",
     "rand-user-agent": "1.0.109",
-    "semver": "^7.6.0",
-    "vitepress": "1.2.2"
+    "semver": "^7.6.0"
   },
   "engines": {
     "node": ">=18.4.0"
+  },
+  "optionalDependencies": {
+    "vitepress": "1.2.2"
   }
 }
