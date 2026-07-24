@@ -129,16 +129,32 @@
               <div class="about-feature-text">目录树 · Markdown 预览 · 本地资源</div>
             </div>
           </div>
+          <div class="about-feature">
+            <div class="about-feature-icon">👤</div>
+            <div>
+              <div class="about-feature-title">作者 · heizicao</div>
+              <div class="about-feature-text">
+                项目地址
+                <a
+                  href="https://github.com/ljw98/YuqueDL"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="about-link"
+                >github.com/ljw98/YuqueDL</a>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div class="about-footer-note">
-          YuqueDL · 下载引擎致谢
+          基于
           <a
             href="https://github.com/gxr404/yuque-dl"
             target="_blank"
             rel="noopener noreferrer"
-            class="about-link"
+            class="about-link about-link-muted"
           >gxr404/yuque-dl</a>
+          开发
         </div>
       </div>
     </el-dialog>
@@ -250,10 +266,15 @@ const aboutVisible = ref(false)
   line-height: 1.4;
 }
 
+.about-feature-text .about-link {
+  margin-left: 4px;
+}
+
 .about-footer-note {
   margin-top: 16px;
   font-size: 12px;
   color: var(--muted);
+  line-height: 1.5;
 }
 
 .about-link {
@@ -267,6 +288,18 @@ const aboutVisible = ref(false)
 .about-link:hover {
   color: #31cc79;
   border-bottom-color: rgba(49, 204, 121, 0.7);
+}
+
+/* 底部致谢：不抢主内容链接的绿色 */
+.about-footer-note .about-link-muted {
+  color: inherit;
+  font-weight: 500;
+  border-bottom-color: rgba(120, 130, 150, 0.35);
+}
+
+.about-footer-note .about-link-muted:hover {
+  color: #667085;
+  border-bottom-color: rgba(102, 112, 133, 0.55);
 }
 
 </style>

@@ -440,22 +440,37 @@ async function removeCurrentBook() {
 const { prefs: uiPrefs } = useUiPrefs()
 const autoRefresh = computed(() => uiPrefs.autoRefreshLibrary !== false)
 
-let refreshTimer: ReturnType<typeof setInterval> | null = null
+let refreshTimer: ReturnType<typeof setTimeout> | null = null
+let pageVisible = true
+const LIBRARY_POLL_MS = 5000
 
 function stopAutoRefresh() {
   if (refreshTimer) {
-    clearInterval(refreshTimer)
+    clearTimeout(refreshTimer)
     refreshTimer = null
   }
 }
 
 function startAutoRefresh() {
   stopAutoRefresh()
-  if (!autoRefresh.value) return
-  // 仅静默刷新知识库列表（体积等），不打断当前阅读
-  refreshTimer = setInterval(() => {
+  if (!autoRefresh.value || !pageVisible) return
+  // 仅静默刷新知识库列表（体积等），不打断当前阅读；后台标签页暂停
+  refreshTimer = setTimeout(() => {
+    void loadBooksQuiet().finally(() => {
+      if (autoRefresh.value && pageVisible) startAutoRefresh()
+    })
+  }, LIBRARY_POLL_MS)
+}
+
+function onPageVisibility() {
+  if (!import.meta.client) return
+  pageVisible = document.visibilityState !== 'hidden'
+  if (pageVisible && autoRefresh.value) {
     void loadBooksQuiet()
-  }, 5000)
+    startAutoRefresh()
+  } else {
+    stopAutoRefresh()
+  }
 }
 
 async function loadBooksQuiet() {
@@ -478,6 +493,10 @@ async function loadBooksQuiet() {
 }
 
 onMounted(async () => {
+  if (import.meta.client) {
+    document.addEventListener('visibilitychange', onPageVisibility)
+    pageVisible = document.visibilityState !== 'hidden'
+  }
   await loadBooks()
   startAutoRefresh()
   // topbar 搜索带过来的 q 仅作提示
@@ -492,6 +511,9 @@ watch(autoRefresh, () => {
 
 onBeforeUnmount(() => {
   stopAutoRefresh()
+  if (import.meta.client) {
+    document.removeEventListener('visibilitychange', onPageVisibility)
+  }
 })
 </script>
 

@@ -332,15 +332,47 @@ export function getTask(id: string) {
   return state().jobs.get(id)
 }
 
-export function publicTask(task: TaskRecord) {
-  return {
-    ...task,
+export interface PublicTaskOptions {
+  /** 默认 false：列表/轮询不带全量 logs，显著减小 payload */
+  includeLogs?: boolean
+}
+
+/**
+ * 对外安全视图。
+ * - 默认不含 logs（仅 logCount），供列表/队列轮询
+ * - 详情 / SSE 首包 / 需要完整日志时传 includeLogs: true
+ */
+export function publicTask(task: TaskRecord, opts: PublicTaskOptions = {}) {
+  const includeLogs = opts.includeLogs === true
+  const logs = task.logs || []
+  const base = {
+    id: task.id,
+    type: task.type,
+    urls: task.urls,
     options: {
       ...task.options,
       token: task.options.token ? maskToken(task.options.token) : '',
       password: task.options.password ? '******' : '',
     },
+    status: task.status,
+    createdAt: task.createdAt,
+    startedAt: task.startedAt,
+    finishedAt: task.finishedAt,
+    current: task.current,
+    total: task.total,
+    message: task.message,
+    error: task.error,
+    bookPath: task.bookPath,
+    bookName: task.bookName,
+    targetBooks: task.targetBooks,
+    source: task.source,
+    scheduleId: task.scheduleId,
+    logCount: logs.length,
   }
+  if (includeLogs) {
+    return { ...base, logs }
+  }
+  return base
 }
 
 const ALLOWED_TASK_TYPES: TaskType[] = ['book', 'docs', 'batch', 'user']
@@ -454,9 +486,9 @@ export async function createTask(input: {
   jobs.set(id, task)
   queue.push(id)
   await persistJobs()
-  emitTask(id, { type: 'task', task: publicTask(task) })
+  emitTask(id, { type: 'task', task: publicTask(task, { includeLogs: true }) })
   void pumpQueue()
-  return publicTask(task)
+  return publicTask(task, { includeLogs: true })
 }
 
 export function subscribeTask(id: string, fn: (payload: any) => void) {
@@ -503,8 +535,8 @@ export async function cancelTask(id: string) {
     task.message = '已取消'
     appendLog(task, 'warn', '任务已取消')
     await persistJobs()
-    emitTask(id, { type: 'task', task: publicTask(task) })
-    return publicTask(task)
+    emitTask(id, { type: 'task', task: publicTask(task, { includeLogs: true }) })
+    return publicTask(task, { includeLogs: true })
   }
 
   if (task.status === 'running') {
@@ -517,11 +549,11 @@ export async function cancelTask(id: string) {
     task.finishedAt = Date.now()
     appendLog(task, 'warn', '任务已取消')
     await persistJobs()
-    emitTask(id, { type: 'task', task: publicTask(task) })
-    return publicTask(task)
+    emitTask(id, { type: 'task', task: publicTask(task, { includeLogs: true }) })
+    return publicTask(task, { includeLogs: true })
   }
 
-  return publicTask(task)
+  return publicTask(task, { includeLogs: true })
 }
 
 export async function retryTask(id: string) {
@@ -548,9 +580,9 @@ export async function retryTask(id: string) {
 
   queue.push(id)
   await persistJobs()
-  emitTask(id, { type: 'task', task: publicTask(task) })
+  emitTask(id, { type: 'task', task: publicTask(task, { includeLogs: true }) })
   void pumpQueue()
-  return publicTask(task)
+  return publicTask(task, { includeLogs: true })
 }
 
 export async function deleteTask(id: string) {
@@ -608,7 +640,7 @@ async function runTask(id: string) {
   task.startedAt = Date.now()
   task.message = '下载中'
   appendLog(task, 'info', '开始执行任务')
-  emitTask(id, { type: 'task', task: publicTask(task) })
+  emitTask(id, { type: 'task', task: publicTask(task, { includeLogs: true }) })
   await persistJobs()
 
   try {
@@ -617,6 +649,8 @@ async function runTask(id: string) {
     const { resolveCoreEntry } = await import('./paths')
     const coreEntry = await resolveCoreEntry()
     const core = await import(pathToFileURL(coreEntry).href)
+
+    appendLog(task, 'info', `输出目录: ${downloadsDir}`)
 
     const options = {
       distDir: downloadsDir,
@@ -631,6 +665,58 @@ async function runTask(id: string) {
       hideFooter: Boolean(task.options.hideFooter),
     }
 
+    /** 进度回调 → 任务状态 + 运行日志（含保存路径） */
+    const handleProgress = (
+      payload: {
+        current: number
+        total: number
+        message?: string
+        phase?: string
+        success?: boolean
+        item?: { path?: string; toc?: { title?: string } }
+        filePath?: string
+      },
+      bookPrefix = '',
+    ) => {
+      task.current = payload.current
+      task.total = payload.total
+      if (payload.message) task.message = bookPrefix + payload.message
+      emitTask(id, {
+        type: 'progress',
+        current: task.current,
+        total: task.total,
+        message: task.message,
+        phase: payload.phase,
+      })
+
+      const phase = payload.phase || ''
+      if (phase === 'item') {
+        const rel = payload.item?.path || payload.message || ''
+        const abs = payload.filePath || rel
+        const title = payload.item?.toc?.title
+        const progress = payload.total
+          ? `[${payload.current}/${payload.total}] `
+          : ''
+        const namePart = title && title !== rel ? `「${title}」 ` : ''
+        if (payload.success === false) {
+          appendLog(task, 'error', `${bookPrefix}${progress}下载失败 ${namePart}${abs}`)
+        } else if (rel || abs) {
+          const isFile = /\.(md|markdown)$/i.test(rel) || /\.(md|markdown)$/i.test(abs)
+          appendLog(
+            task,
+            'info',
+            isFile
+              ? `${bookPrefix}${progress}已保存 ${namePart}${abs}`
+              : `${bookPrefix}${progress}目录 ${namePart}${abs}`,
+          )
+        }
+      } else if (phase === 'done' && payload.message) {
+        appendLog(task, 'info', `${bookPrefix}知识库目录: ${payload.message}`)
+      } else if ((phase === 'init' || phase === 'start') && payload.message) {
+        appendLog(task, 'info', `${bookPrefix}${payload.message}`)
+      }
+    }
+
     const hooks = {
       signal: controller.signal,
       onLog: (level: TaskLog['level'], message: string) => {
@@ -641,18 +727,10 @@ async function runTask(id: string) {
         total: number
         message?: string
         phase?: string
-      }) => {
-        task.current = payload.current
-        task.total = payload.total
-        if (payload.message) task.message = payload.message
-        emitTask(id, {
-          type: 'progress',
-          current: task.current,
-          total: task.total,
-          message: task.message,
-          phase: payload.phase,
-        })
-      },
+        success?: boolean
+        item?: { path?: string; toc?: { title?: string } }
+        filePath?: string
+      }) => handleProgress(payload),
     }
 
     let result: any
@@ -678,6 +756,7 @@ async function runTask(id: string) {
           phase: `book:${i + 1}/${bookTotal}`,
         })
         task.message = `知识库 ${i + 1}/${bookTotal}`
+        const bookPrefix = `[库 ${i + 1}/${bookTotal}] `
         const bookHooks = {
           ...hooks,
           onProgress: (payload: {
@@ -685,19 +764,10 @@ async function runTask(id: string) {
             total: number
             message?: string
             phase?: string
-          }) => {
-            task.current = payload.current
-            task.total = payload.total
-            const bookPrefix = `[库 ${i + 1}/${bookTotal}] `
-            task.message = bookPrefix + (payload.message || '')
-            emitTask(id, {
-              type: 'progress',
-              current: task.current,
-              total: task.total,
-              message: task.message,
-              phase: payload.phase || `book:${i + 1}/${bookTotal}`,
-            })
-          },
+            success?: boolean
+            item?: { path?: string; toc?: { title?: string } }
+            filePath?: string
+          }) => handleProgress(payload, bookPrefix),
         }
         result = await core.main(url, options, bookHooks)
         if (result?.bookName) touchedBooks.add(String(result.bookName))
@@ -726,7 +796,11 @@ async function runTask(id: string) {
         touchedBooks.add(String(result.bookName))
       }
       task.targetBooks = [...touchedBooks]
-      appendLog(task, 'info', '任务完成')
+      if (result?.bookPath) {
+        appendLog(task, 'info', `任务完成，文件位于: ${result.bookPath}`)
+      } else {
+        appendLog(task, 'info', `任务完成，输出目录: ${downloadsDir}`)
+      }
     }
   } catch (err: any) {
     if (
@@ -759,8 +833,8 @@ async function runTask(id: string) {
       task.error = '已取消'
       task.message = '已取消'
     }
-    emitTask(id, { type: 'task', task: publicTask(task) })
-    emitTask(id, { type: 'done', task: publicTask(task) })
+    emitTask(id, { type: 'task', task: publicTask(task, { includeLogs: true }) })
+    emitTask(id, { type: 'done', task: publicTask(task, { includeLogs: true }) })
     await persistJobs()
   }
 }

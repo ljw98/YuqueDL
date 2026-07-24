@@ -108,13 +108,20 @@ export class ProgressBar {
         console.log('')
       }
     }
+    const relPath = progressItem.path || ''
+    const absPath = relPath
+      ? (relPath.startsWith('/') || /^[A-Za-z]:[\\/]/.test(relPath)
+          ? relPath
+          : `${this.bookPath.replace(/[\\/]+$/, '')}/${relPath.replace(/^[/\\]+/, '')}`)
+      : this.bookPath
     this.hooks?.onProgress?.({
       current: this.curr,
       total: this.total,
       item: progressItem,
       success: isSuccess,
       phase: 'item',
-      message: progressItem.path,
+      message: relPath,
+      filePath: absPath,
     })
   }
   // 暂停进度条的打印

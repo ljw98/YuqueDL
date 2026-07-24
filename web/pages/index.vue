@@ -13,10 +13,17 @@
         <div class="value" style="font-size:22px;">{{ modeLabel }}</div>
         <div class="hint">切换后立即生效</div>
       </div>
-      <div class="stat-card">
+      <div
+        class="stat-card is-clickable"
+        role="button"
+        tabindex="0"
+        title="查看任务中心"
+        @click="goTasks"
+        @keydown.enter.prevent="goTasks"
+      >
         <div class="label">任务状态</div>
-        <div class="value" style="font-size:22px;">{{ activeTask ? statusText(activeTask.status) : '空闲' }}</div>
-        <div class="hint">{{ activeTask ? `${activeTask.current || 0}/${activeTask.total || 0}` : '暂无进行中任务' }}</div>
+        <div class="value" style="font-size:22px;">{{ queueStatusLabel }}</div>
+        <div class="hint">{{ queueStatusHint }}</div>
       </div>
       <div class="stat-card">
         <div class="label">知识库</div>
@@ -79,7 +86,7 @@
               </div>
             </el-form-item>
 
-            <!-- 私有：展示 Token 状态，引导去右侧配置 -->
+            <!-- 私有：展示 Token 状态，引导去下载默认配置 -->
             <el-form-item v-else label="语雀 Token">
               <div class="token-status-box" :class="tokenReady ? 'is-ready' : 'is-missing'">
                 <div class="token-status-main">
@@ -87,7 +94,7 @@
                   <span class="token-status-meta">{{ tokenStatusMeta }}</span>
                 </div>
                 <div class="field-hint" style="margin-top:8px;">
-                  请在右侧「Token 设置」填写并保存，也可临时粘贴后直接下载。
+                  {{ tokenGuideHint }}
                 </div>
               </div>
             </el-form-item>
@@ -103,26 +110,33 @@
       </div>
 
       <div ref="settingsCardRef" class="panel task-config-card">
-        <h3 class="panel-title">Token 设置</h3>
+        <h3 class="panel-title">下载默认配置</h3>
         <p class="panel-desc">
           登录语雀后按 F12 打开开发者工具 → Application → Cookies → <code>https://www.yuque.com</code> → 复制 <code>_yuque_session</code> 的 Value。
+          临时填写可直接用于本次下载；点「保存设置」写入后端，供以后任务使用。
         </p>
         <div class="task-card-body">
           <el-form label-position="top">
             <el-form-item label="语雀 Token">
-              <el-input
-                v-model="form.token"
-                type="password"
-                show-password
-                size="large"
-                :placeholder="tokenPlaceholder"
-                @paste="onTokenPaste"
-              />
-            </el-form-item>
-            <el-form-item label="Cookie Key">
-              <div class="password-input-wrap">
-                <el-input v-model="form.key" size="large" placeholder="_yuque_session" />
+              <div class="token-field">
+                <el-input
+                  v-model="form.token"
+                  type="password"
+                  show-password
+                  size="large"
+                  class="token-input"
+                  :placeholder="tokenPlaceholder"
+                  @paste="onTokenPaste"
+                />
+                <el-button
+                  type="primary"
+                  size="large"
+                  class="token-check-btn"
+                  :loading="checkingToken"
+                  @click="checkToken"
+                >检测</el-button>
               </div>
+              <div class="field-hint token-usage-hint">{{ tokenUsageHint }}</div>
             </el-form-item>
             <el-form-item label="默认选项">
               <div class="option-chips">
@@ -197,6 +211,15 @@ const settingsCardRef = ref<HTMLElement | null>(null)
 const hasSavedToken = ref(false)
 const savedTokenHint = ref("")
 const libraryCount = ref(0)
+const checkingToken = ref(false)
+const isNarrowLayout = ref(false)
+const queueRunning = ref(0)
+const queueQueued = ref(0)
+const queueFocusTask = ref<any>(null)
+let queuePollTimer: ReturnType<typeof setTimeout> | null = null
+let queuePollVisible = true
+const QUEUE_POLL_ACTIVE_MS = 5000
+const QUEUE_POLL_IDLE_MS = 20000
 const tokenPlaceholder = computed(() => {
   if (hasSavedToken.value && savedTokenHint.value) return savedTokenHint.value
   if (hasSavedToken.value) return "已保存，输入新值可覆盖"
@@ -206,9 +229,35 @@ const saving = ref(false)
 
 const tokenReady = computed(() => Boolean(form.token || hasSavedToken.value))
 const tokenStatusMeta = computed(() => {
-  if (form.token) return '将使用本次输入的 Token'
+  if (form.token) return '将使用本次输入的 Token（未保存）'
   if (hasSavedToken.value) return savedTokenHint.value || '将使用已保存的 Token'
-  return '请先在右侧配置'
+  return isNarrowLayout.value ? '请先在下方配置' : '请先在右侧配置'
+})
+const tokenGuideHint = computed(() => {
+  if (isNarrowLayout.value) {
+    return '请在下方「下载默认配置」填写；可临时粘贴后直接下载，或点「保存设置」写入后端。'
+  }
+  return '请在右侧「下载默认配置」填写；可临时粘贴后直接下载，或点「保存设置」写入后端。'
+})
+const tokenUsageHint = computed(() => {
+  if (form.token) return '当前为本次输入：点「开始下载」仅本次任务使用；点「保存设置」才写入后端。'
+  if (hasSavedToken.value) return '已使用后端保存的 Token；输入新值可覆盖本次或保存后永久生效。'
+  return '未保存 Token。临时填写后可直接下载私有库；需要长期使用请点「保存设置」。'
+})
+const queueStatusLabel = computed(() => {
+  const n = queueRunning.value + queueQueued.value
+  if (n > 0) return n === 1 ? statusText(queueFocusTask.value?.status || 'running') : `${n} 个进行中`
+  return '空闲'
+})
+const queueStatusHint = computed(() => {
+  const t = queueFocusTask.value
+  if (queueRunning.value + queueQueued.value > 0 && t) {
+    const cur = t.current || 0
+    const total = t.total || 0
+    if (total) return `${statusText(t.status)} · ${cur}/${total} · 点击查看`
+    return `${statusText(t.status)} · 点击查看任务中心`
+  }
+  return '暂无进行中任务 · 点击查看'
 })
 const modeLabel = computed(() => ({
   book: '整库下载',
@@ -308,13 +357,104 @@ async function loadLibraryCount() {
   }
 }
 
+function stopQueuePoll() {
+  if (queuePollTimer) {
+    clearTimeout(queuePollTimer)
+    queuePollTimer = null
+  }
+}
+
+function queuePollIntervalMs() {
+  const n = queueRunning.value + queueQueued.value
+  return n > 0 ? QUEUE_POLL_ACTIVE_MS : QUEUE_POLL_IDLE_MS
+}
+
+function startQueuePoll(immediate = false) {
+  stopQueuePoll()
+  if (!import.meta.client || !queuePollVisible) return
+  if (immediate) void loadQueueStatus().then(() => scheduleNextQueuePoll())
+  else scheduleNextQueuePoll()
+}
+
+function scheduleNextQueuePoll() {
+  stopQueuePoll()
+  if (!import.meta.client || !queuePollVisible) return
+  queuePollTimer = setTimeout(() => {
+    void loadQueueStatus().then(() => scheduleNextQueuePoll())
+  }, queuePollIntervalMs())
+}
+
+function onQueueVisibility() {
+  if (!import.meta.client) return
+  queuePollVisible = document.visibilityState !== 'hidden'
+  if (queuePollVisible) startQueuePoll(true)
+  else stopQueuePoll()
+}
+
+async function loadQueueStatus() {
+  try {
+    // 仅拉 active 摘要，默认 lite 不含 logs
+    const res = await $fetch<{ tasks: any[] }>('/api/tasks', {
+      query: { status: 'running,queued' },
+    })
+    const list = Array.isArray(res.tasks) ? res.tasks : []
+    const active = list.filter((t) => t.status === 'running' || t.status === 'queued')
+    queueRunning.value = active.filter((t) => t.status === 'running').length
+    queueQueued.value = active.filter((t) => t.status === 'queued').length
+    // Prefer the task just created on this page if still active
+    const localId = activeTask.value?.id
+    queueFocusTask.value =
+      (localId && active.find((t) => t.id === localId)) ||
+      active.find((t) => t.status === 'running') ||
+      active[0] ||
+      null
+    if (queueFocusTask.value) activeTask.value = queueFocusTask.value
+  } catch {
+    // keep last known
+  }
+}
+
+function goTasks() {
+  return navigateTo('/tasks')
+}
+
+function updateLayoutFlags() {
+  if (typeof window === 'undefined') return
+  isNarrowLayout.value = window.innerWidth <= 1100
+}
+
+async function checkToken() {
+  const token = String(form.token || '').trim()
+  if (!token && !hasSavedToken.value) {
+    ElMessage.warning('请先填写语雀 Token')
+    return
+  }
+  checkingToken.value = true
+  try {
+    const res = await $fetch<{ ok?: boolean; message?: string }>('/api/settings/token/check', {
+      method: 'POST',
+      body: {
+        token: token || undefined,
+        key: form.key || undefined,
+      },
+    })
+    const msg = res?.message || (res?.ok ? 'Token 有效' : 'Token 无效')
+    if (res?.ok) ElMessage.success(msg)
+    else ElMessage.warning(msg)
+  } catch (e: any) {
+    ElMessage.error(e?.data?.statusMessage || e?.message || '检测失败')
+  } finally {
+    checkingToken.value = false
+  }
+}
+
 async function startDownload() {
   if (form.type !== 'user' && !String(form.urls || '').trim()) {
     ElMessage.warning('请先填写知识库或文档 URL')
     return
   }
   if (accessType.value === 'private' && !tokenReady.value) {
-    ElMessage.warning('私有库需要语雀 Token，请先在右侧填写')
+    ElMessage.warning(isNarrowLayout.value ? '私有库需要语雀 Token，请先在下方填写' : '私有库需要语雀 Token，请先在右侧填写')
     return
   }
 
@@ -348,6 +488,9 @@ async function startDownload() {
       },
     })
     activeTask.value = res.task
+    await loadQueueStatus()
+    // 创建后切到活跃轮询（5s）
+    startQueuePoll(false)
     syncCardHeights()
     ElMessage.success('任务已创建，请到「任务」页查看')
   } catch (e: any) {
@@ -361,7 +504,6 @@ async function saveSettings() {
   saving.value = true
   try {
     const body: any = {
-      key: form.key,
       ignoreImg: form.ignoreImg,
       ignoreAttachments: buildIgnoreAttachments(),
       incremental: form.incremental,
@@ -373,7 +515,7 @@ async function saveSettings() {
     const res = await $fetch('/api/settings', { method: 'PUT', body })
     hasSavedToken.value = Boolean((res as any).settings?.hasToken)
     if (form.token) form.token = ''
-    ElMessage.success('已保存')
+    ElMessage.success('已保存到后端，后续任务可复用')
   } catch (e: any) {
     ElMessage.error(e?.data?.statusMessage || e?.message || '保存失败')
   } finally {
@@ -412,14 +554,29 @@ watch(accessType, (val) => {
   syncCardHeights()
 })
 
+function onResize() {
+  updateLayoutFlags()
+  syncCardHeights()
+}
+
 onMounted(() => {
+  updateLayoutFlags()
   loadSettingsDefaults()
   loadLibraryCount()
   syncCardHeights()
-  window.addEventListener('resize', syncCardHeights)
+  window.addEventListener('resize', onResize)
+  if (import.meta.client) {
+    document.addEventListener('visibilitychange', onQueueVisibility)
+    queuePollVisible = document.visibilityState !== 'hidden'
+  }
+  startQueuePoll(true)
 })
 onBeforeUnmount(() => {
-  window.removeEventListener('resize', syncCardHeights)
+  window.removeEventListener('resize', onResize)
+  if (import.meta.client) {
+    document.removeEventListener('visibilitychange', onQueueVisibility)
+  }
+  stopQueuePoll()
 })
 </script>
 
@@ -515,6 +672,13 @@ onBeforeUnmount(() => {
   .task-card-footer {
     margin-top: 0;
   }
+  .token-field {
+    width: 100%;
+  }
+  .token-check-btn {
+    min-height: 40px;
+    padding: 0 14px;
+  }
 }
 .option-chips :deep(.el-tooltip__trigger) {
   display: inline-flex;
@@ -524,6 +688,37 @@ onBeforeUnmount(() => {
   color: var(--text-secondary);
   font-size: 12px;
   line-height: 1.5;
+}
+.token-usage-hint {
+  margin-top: 8px;
+}
+.token-field {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+}
+.token-field .token-input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.token-check-btn {
+  flex: 0 0 auto;
+  margin-left: 0 !important;
+}
+.stat-card.is-clickable {
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+.stat-card.is-clickable:hover {
+  border-color: rgba(49, 204, 121, 0.45);
+  box-shadow: 0 6px 16px rgba(49, 204, 121, 0.12);
+}
+.stat-card.is-clickable:focus-visible {
+  outline: 2px solid #31cc79;
+  outline-offset: 2px;
 }
 .token-status-box {
   width: 100%;

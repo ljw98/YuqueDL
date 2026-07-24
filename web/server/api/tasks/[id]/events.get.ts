@@ -17,7 +17,7 @@ export default defineEventHandler(async (event) => {
     res.write(`data: ${JSON.stringify(payload)}\n\n`)
   }
 
-  send({ type: 'task', task: publicTask(task) })
+  send({ type: 'task', task: publicTask(task, { includeLogs: true }) })
   for (const log of task.logs.slice(-50)) {
     send({ type: 'log', log })
   }

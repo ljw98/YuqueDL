@@ -7,211 +7,213 @@
       </div>
     </div>
 
-    <div class="settings-grid" v-loading="loading">
-      <div class="panel">
-        <div class="panel-head">
-          <h3 class="panel-title">Token 设置</h3>
-          <el-button
-            v-if="tokenDirty"
-            type="primary"
-            :loading="savingToken"
-            @click="saveToken"
-          >
-            保存
-          </el-button>
+    <div class="settings-masonry" v-loading="loading">
+      <div class="settings-col">
+  <div class="panel">
+          <div class="panel-head">
+            <h3 class="panel-title">Token 设置</h3>
+            <el-button
+              v-if="tokenDirty"
+              type="primary"
+              :loading="savingToken"
+              @click="saveToken"
+            >
+              保存
+            </el-button>
+          </div>
+          <p class="panel-desc">
+            登录语雀后按 F12 打开开发者工具 → Application → Cookies → <code>https://www.yuque.com</code> → 复制 <code>_yuque_session</code> 的 Value。
+          </p>
+          <el-form label-position="top" class="settings-form">
+            <el-form-item label="语雀 Token">
+              <div class="token-field">
+                <el-input
+                  v-model="form.token"
+                  type="password"
+                  show-password
+                  clearable
+                  size="large"
+                  class="token-input"
+                  :placeholder="tokenPlaceholder"
+                  :disabled="clearingToken"
+                  @paste="onTokenPaste"
+                  @clear="onTokenFieldClear"
+                >
+                  <template v-if="hasSavedToken && !form.token" #suffix>
+                    <!-- 与 el-input clearable 同款图标/样式 -->
+                    <i
+                      class="el-icon el-input__icon el-input__clear token-saved-clear"
+                      role="button"
+                      tabindex="0"
+                      title="清除 Token"
+                      aria-label="清除 Token"
+                      @click.stop.prevent="!clearingToken && clearToken()"
+                      @keydown.enter.prevent="!clearingToken && clearToken()"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+                        <path
+                          fill="currentColor"
+                          d="M512 64a448 448 0 1 1 0 896 448 448 0 0 1 0-896zm0 393.664L407.936 353.6a38.4 38.4 0 1 0-54.336 54.336L457.664 512 353.6 616.064a38.4 38.4 0 1 0 54.336 54.336L512 566.336 616.064 670.4a38.4 38.4 0 1 0 54.336-54.336L566.336 512 670.4 407.936a38.4 38.4 0 1 0-54.336-54.336L512 457.664z"
+                        />
+                      </svg>
+                    </i>
+                  </template>
+                </el-input>
+                <el-button
+                  type="primary"
+                  size="large"
+                  class="token-check-btn"
+                  :loading="checkingToken"
+                  @click="checkToken"
+                >检测</el-button>
+              </div>
+            </el-form-item>
+            <el-form-item label="Cookie Key">
+              <div class="field-md">
+                <el-input v-model="form.key" size="large" placeholder="_yuque_session" />
+              </div>
+            </el-form-item>
+          </el-form>
         </div>
-        <p class="panel-desc">
-          登录语雀后按 F12 打开开发者工具 → Application → Cookies → <code>https://www.yuque.com</code> → 复制 <code>_yuque_session</code> 的 Value。
-        </p>
-        <el-form label-position="top" class="settings-form">
-          <el-form-item label="语雀 Token">
-            <div class="token-field">
-              <el-input
-                v-model="form.token"
-                type="password"
-                show-password
-                clearable
-                size="large"
-                class="token-input"
-                :placeholder="tokenPlaceholder"
-                :disabled="clearingToken"
-                @paste="onTokenPaste"
-                @clear="onTokenFieldClear"
-              >
-                <template v-if="hasSavedToken && !form.token" #suffix>
-                  <!-- 与 el-input clearable 同款图标/样式 -->
-                  <i
-                    class="el-icon el-input__icon el-input__clear token-saved-clear"
-                    role="button"
-                    tabindex="0"
-                    title="清除 Token"
-                    aria-label="清除 Token"
-                    @click.stop.prevent="!clearingToken && clearToken()"
-                    @keydown.enter.prevent="!clearingToken && clearToken()"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
-                      <path
-                        fill="currentColor"
-                        d="M512 64a448 448 0 1 1 0 896 448 448 0 0 1 0-896zm0 393.664L407.936 353.6a38.4 38.4 0 1 0-54.336 54.336L457.664 512 353.6 616.064a38.4 38.4 0 1 0 54.336 54.336L512 566.336 616.064 670.4a38.4 38.4 0 1 0 54.336-54.336L566.336 512 670.4 407.936a38.4 38.4 0 1 0-54.336-54.336L512 457.664z"
-                      />
-                    </svg>
-                  </i>
-                </template>
-              </el-input>
-              <el-button
-                type="primary"
-                size="large"
-                class="token-check-btn"
-                :loading="checkingToken"
-                @click="checkToken"
-              >检测</el-button>
-            </div>
-          </el-form-item>
-          <el-form-item label="Cookie Key">
-            <div class="field-md">
-              <el-input v-model="form.key" size="large" placeholder="_yuque_session" />
-            </div>
-          </el-form-item>
-        </el-form>
+  <div class="panel">
+          <div class="panel-head">
+            <h3 class="panel-title">任务与并发</h3>
+            <el-button
+              v-if="concurrencyDirty"
+              type="primary"
+              :loading="savingConcurrency"
+              @click="saveConcurrency"
+            >
+              保存
+            </el-button>
+          </div>
+          <p class="panel-desc">设置同时下载数，以及列表是否自动刷新。</p>
+          <el-form label-position="top" class="settings-form">
+            <el-form-item label="自动刷新（任务页）">
+              <div class="switch-row">
+                <el-switch
+                  :model-value="uiPrefs.autoRefreshTasks"
+                  style="--el-switch-on-color: #31CC79;"
+                  @change="onAutoRefreshTasksChange"
+                />
+              </div>
+            </el-form-item>
+            <el-form-item label="自动刷新（知识库页）">
+              <div class="switch-row">
+                <el-switch
+                  :model-value="uiPrefs.autoRefreshLibrary"
+                  style="--el-switch-on-color: #31CC79;"
+                  @change="onAutoRefreshLibraryChange"
+                />
+              </div>
+            </el-form-item>
+            <el-form-item label="最大并发任务数">
+              <el-input-number
+                v-model="form.maxConcurrency"
+                :min="1"
+                :max="3"
+                :step="1"
+                controls-position="right"
+              />
+            </el-form-item>
+          </el-form>
+        </div>
       </div>
 
-      <div class="panel">
-        <div class="panel-head">
-          <h3 class="panel-title">下载默认配置</h3>
-          <el-button
-            v-if="downloadDirty"
-            type="primary"
-            :loading="savingDownload"
-            @click="saveDownload"
-          >
-            保存
-          </el-button>
+      <div class="settings-col">
+  <div class="panel">
+          <div class="panel-head">
+            <h3 class="panel-title">下载默认配置</h3>
+            <el-button
+              v-if="downloadDirty"
+              type="primary"
+              :loading="savingDownload"
+              @click="saveDownload"
+            >
+              保存
+            </el-button>
+          </div>
+          <p class="panel-desc">新建任务时默认采用这些选项。</p>
+          <el-form label-position="top" class="settings-form">
+            <el-form-item label="默认选项">
+              <div class="option-chips">
+                <el-tooltip content="跳过图片下载，正文保留原图链接" placement="top">
+                  <el-checkbox v-model="form.ignoreImg" border>忽略图片</el-checkbox>
+                </el-tooltip>
+                <el-tooltip content="跳过所有附件与音视频；若只要忽略部分类型，请关闭并填写下方后缀" placement="top">
+                  <el-checkbox v-model="form.ignoreAllAttachments" border>忽略附件</el-checkbox>
+                </el-tooltip>
+                <el-tooltip content="只下载有变更的文档，适合反复同步同一库" placement="top">
+                  <el-checkbox v-model="form.incremental" border>增量下载</el-checkbox>
+                </el-tooltip>
+                <el-tooltip content="在 Markdown 顶部生成目录" placement="top">
+                  <el-checkbox v-model="form.toc" border>生成目录</el-checkbox>
+                </el-tooltip>
+                <el-tooltip content="不在文末写入更新时间、原文链接等" placement="top">
+                  <el-checkbox v-model="form.hideFooter" border>隐藏页脚</el-checkbox>
+                </el-tooltip>
+                <el-tooltip content="把视频链接写成 video 标签，方便本地预览" placement="top">
+                  <el-checkbox v-model="form.convertMarkdownVideoLinks" border>视频改标签</el-checkbox>
+                </el-tooltip>
+              </div>
+            </el-form-item>
+            <el-form-item v-if="!form.ignoreAllAttachments" label="忽略附件后缀">
+              <div class="field-md">
+                <el-input
+                  v-model="form.ignoreAttachmentExts"
+                  size="large"
+                  placeholder="例如 mp4,pdf,zip（留空则下载全部附件）"
+                />
+              </div>
+            </el-form-item>
+          </el-form>
         </div>
-        <p class="panel-desc">新建任务时默认采用这些选项。</p>
-        <el-form label-position="top" class="settings-form">
-          <el-form-item label="默认选项">
-            <div class="option-chips">
-              <el-tooltip content="跳过图片下载，正文保留原图链接" placement="top">
-                <el-checkbox v-model="form.ignoreImg" border>忽略图片</el-checkbox>
-              </el-tooltip>
-              <el-tooltip content="跳过所有附件与音视频；若只要忽略部分类型，请关闭并填写下方后缀" placement="top">
-                <el-checkbox v-model="form.ignoreAllAttachments" border>忽略附件</el-checkbox>
-              </el-tooltip>
-              <el-tooltip content="只下载有变更的文档，适合反复同步同一库" placement="top">
-                <el-checkbox v-model="form.incremental" border>增量下载</el-checkbox>
-              </el-tooltip>
-              <el-tooltip content="在 Markdown 顶部生成目录" placement="top">
-                <el-checkbox v-model="form.toc" border>生成目录</el-checkbox>
-              </el-tooltip>
-              <el-tooltip content="不在文末写入更新时间、原文链接等" placement="top">
-                <el-checkbox v-model="form.hideFooter" border>隐藏页脚</el-checkbox>
-              </el-tooltip>
-              <el-tooltip content="把视频链接写成 video 标签，方便本地预览" placement="top">
-                <el-checkbox v-model="form.convertMarkdownVideoLinks" border>视频改标签</el-checkbox>
-              </el-tooltip>
-            </div>
-          </el-form-item>
-          <el-form-item v-if="!form.ignoreAllAttachments" label="忽略附件后缀">
-            <div class="field-md">
-              <el-input
-                v-model="form.ignoreAttachmentExts"
-                size="large"
-                placeholder="例如 mp4,pdf,zip（留空则下载全部附件）"
-              />
-            </div>
-          </el-form-item>
-        </el-form>
-      </div>
-
-      <div class="panel">
-        <div class="panel-head">
-          <h3 class="panel-title">任务与并发</h3>
-          <el-button
-            v-if="concurrencyDirty"
-            type="primary"
-            :loading="savingConcurrency"
-            @click="saveConcurrency"
-          >
-            保存
-          </el-button>
+  <div class="panel">
+          <div class="panel-head">
+            <h3 class="panel-title">控制台安全</h3>
+            <el-button
+              v-if="securityDirty"
+              type="primary"
+              :loading="savingSecurity"
+              @click="saveSecurity"
+            >
+              保存
+            </el-button>
+          </div>
+          <p class="panel-desc">开启后访问需密码；关闭保护会一并清除已保存密码。</p>
+          <el-form label-position="top" class="settings-form">
+            <el-form-item label="登录保护">
+              <div class="switch-row">
+                <el-switch
+                  v-model="form.accessAuthEnabled"
+                  style="--el-switch-on-color: #31CC79;"
+                />
+              </div>
+            </el-form-item>
+            <el-form-item label="控制台访问密码">
+              <div class="field-md">
+                <el-input
+                  v-model="form.accessPassword"
+                  type="password"
+                  show-password
+                  size="large"
+                  :placeholder="hasAccessPassword ? '已设置（输入新值可修改）' : '设置访问密码'"
+                />
+              </div>
+            </el-form-item>
+            <el-form-item v-if="hasAccessPassword" label="原访问密码">
+              <div class="field-md">
+                <el-input
+                  v-model="form.oldAccessPassword"
+                  type="password"
+                  show-password
+                  size="large"
+                  placeholder="修改密码时需填写"
+                />
+              </div>
+            </el-form-item>
+          </el-form>
         </div>
-        <p class="panel-desc">设置同时下载数，以及列表是否自动刷新。</p>
-        <el-form label-position="top" class="settings-form">
-          <el-form-item label="自动刷新（任务页）">
-            <div class="switch-row">
-              <el-switch
-                :model-value="uiPrefs.autoRefreshTasks"
-                style="--el-switch-on-color: #31CC79;"
-                @change="onAutoRefreshTasksChange"
-              />
-            </div>
-          </el-form-item>
-          <el-form-item label="自动刷新（知识库页）">
-            <div class="switch-row">
-              <el-switch
-                :model-value="uiPrefs.autoRefreshLibrary"
-                style="--el-switch-on-color: #31CC79;"
-                @change="onAutoRefreshLibraryChange"
-              />
-            </div>
-          </el-form-item>
-          <el-form-item label="最大并发任务数">
-            <el-input-number
-              v-model="form.maxConcurrency"
-              :min="1"
-              :max="3"
-              :step="1"
-              controls-position="right"
-            />
-          </el-form-item>
-        </el-form>
-      </div>
-
-      <div class="panel">
-        <div class="panel-head">
-          <h3 class="panel-title">控制台安全</h3>
-          <el-button
-            v-if="securityDirty"
-            type="primary"
-            :loading="savingSecurity"
-            @click="saveSecurity"
-          >
-            保存
-          </el-button>
-        </div>
-        <p class="panel-desc">开启后访问需密码；关闭保护会一并清除已保存密码。</p>
-        <el-form label-position="top" class="settings-form">
-          <el-form-item label="登录保护">
-            <div class="switch-row">
-              <el-switch
-                v-model="form.accessAuthEnabled"
-                style="--el-switch-on-color: #31CC79;"
-              />
-            </div>
-          </el-form-item>
-          <el-form-item label="控制台访问密码">
-            <div class="field-md">
-              <el-input
-                v-model="form.accessPassword"
-                type="password"
-                show-password
-                size="large"
-                :placeholder="hasAccessPassword ? '已设置（输入新值可修改）' : '设置访问密码'"
-              />
-            </div>
-          </el-form-item>
-          <el-form-item v-if="hasAccessPassword" label="原访问密码">
-            <div class="field-md">
-              <el-input
-                v-model="form.oldAccessPassword"
-                type="password"
-                show-password
-                size="large"
-                placeholder="修改密码时需填写"
-              />
-            </div>
-          </el-form-item>
-        </el-form>
       </div>
     </div>
   </div>
@@ -553,11 +555,25 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.settings-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+.settings-masonry {
+  display: flex;
+  align-items: flex-start;
   gap: 18px;
-  align-items: start;
+  width: 100%;
+}
+
+.settings-col {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.settings-col > .panel {
+  width: 100%;
+  margin: 0;
+  box-sizing: border-box;
 }
 
 .panel-head {
@@ -697,20 +713,30 @@ onMounted(async () => {
   color: #f04438 !important;
 }
 @media (max-width: 1100px) {
-  .settings-grid {
-    grid-template-columns: 1fr;
+  .settings-masonry {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .settings-col {
+    width: 100%;
+    gap: 12px;
   }
 }
 
 /* 手机 / 窄屏：字段全宽、按钮等分、选项换行不裁切 */
 @media (max-width: 900px) {
-  .settings-grid {
-    grid-template-columns: 1fr;
+  .settings-masonry {
+    flex-direction: column;
     gap: 12px;
     padding-bottom: 8px;
   }
 
-  .settings-grid > .panel {
+  .settings-col {
+    gap: 12px;
+  }
+
+  .settings-col > .panel {
     min-width: 0;
     max-width: 100%;
     overflow: visible;
@@ -783,7 +809,11 @@ onMounted(async () => {
 }
 
 @media (max-width: 480px) {
-  .settings-grid {
+  .settings-masonry {
+    gap: 10px;
+  }
+
+  .settings-col {
     gap: 10px;
   }
 

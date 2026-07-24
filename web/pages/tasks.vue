@@ -289,10 +289,6 @@
                 </span>
               </div>
             </div>
-            <div class="detail-info-item" v-if="current.message">
-              <div class="detail-info-label">消息</div>
-              <div class="detail-info-value">{{ current.message }}</div>
-            </div>
           </div>
 
           <div v-if="current.error" class="detail-error">
@@ -441,15 +437,16 @@ function formatScheduleTime(ts?: number) {
   }
 }
 
-async function loadSchedules() {
-  loadingSchedules.value = true
+async function loadSchedules(opts: { silent?: boolean } = {}) {
+  const silent = opts.silent === true
+  if (!silent) loadingSchedules.value = true
   try {
     const res = await $fetch<{ schedules: any[] }>('/api/schedules')
     schedules.value = res.schedules || []
   } catch (e: any) {
-    ElMessage.error(e?.data?.statusMessage || e?.message || '加载定时同步失败')
+    if (!silent) ElMessage.error(e?.data?.statusMessage || e?.message || '加载定时同步失败')
   } finally {
-    loadingSchedules.value = false
+    if (!silent) loadingSchedules.value = false
   }
 }
 
@@ -544,15 +541,17 @@ async function removeSchedule(row: any) {
   }
 }
 
-async function refresh() {
-  loading.value = true
+async function refresh(opts: { silent?: boolean } = {}) {
+  const silent = opts.silent === true
+  if (!silent) loading.value = true
   try {
+    // 列表默认 lite（无 logs）；详情靠抽屉 + SSE 拉全量
     const res = await $fetch<{ tasks: any[] }>('/api/tasks')
     tasks.value = res.tasks || []
   } catch (e: any) {
-    ElMessage.error(e?.message || '加载失败')
+    if (!silent) ElMessage.error(e?.message || '加载失败')
   } finally {
-    loading.value = false
+    if (!silent) loading.value = false
   }
 }
 
@@ -605,7 +604,14 @@ function startLiveLogs(id: string) {
       if (payload.type === 'task' && payload.task) {
         current.value = payload.task
         const idx = tasks.value.findIndex((t) => t.id === id)
-        if (idx >= 0) tasks.value[idx] = payload.task
+        if (idx >= 0) {
+          const { logs: _logs, ...lite } = payload.task
+          tasks.value[idx] = {
+            ...tasks.value[idx],
+            ...lite,
+            logCount: payload.task.logCount ?? (payload.task.logs?.length || 0),
+          }
+        }
         if (['success', 'failed', 'cancelled'].includes(payload.task.status)) {
           stopLiveLogs()
         }
@@ -624,7 +630,14 @@ function startLiveLogs(id: string) {
       } else if (payload.type === 'done' && payload.task) {
         current.value = payload.task
         const idx = tasks.value.findIndex((t) => t.id === id)
-        if (idx >= 0) tasks.value[idx] = payload.task
+        if (idx >= 0) {
+          const { logs: _logs, ...lite } = payload.task
+          tasks.value[idx] = {
+            ...tasks.value[idx],
+            ...lite,
+            logCount: payload.task.logCount ?? (payload.task.logs?.length || 0),
+          }
+        }
         stopLiveLogs()
       }
     } catch {
@@ -648,9 +661,30 @@ function onTaskMobileCommand(cmd: string, row: any) {
   else if (cmd === 'delete') void remove(row)
 }
 
-function showDetail(row: any) {
+async function showDetail(row: any) {
   current.value = row
   drawer.value = true
+  // 列表是 lite（无 logs），打开详情时补拉完整任务
+  if (row?.id) {
+    try {
+      const res = await $fetch<{ task: any }>(`/api/tasks/${row.id}`)
+      if (res?.task && current.value?.id === row.id) {
+        current.value = res.task
+        const idx = tasks.value.findIndex((t) => t.id === row.id)
+        if (idx >= 0) {
+          // 表格行保持 lite；仅更新状态类字段，避免把大 logs 塞回列表
+          const { logs: _logs, ...lite } = res.task
+          tasks.value[idx] = {
+            ...tasks.value[idx],
+            ...lite,
+            logCount: res.task.logCount ?? (res.task.logs?.length || 0),
+          }
+        }
+      }
+    } catch {
+      // 详情拉取失败时仍展示列表行字段
+    }
+  }
   if (row?.status === 'running' || row?.status === 'queued') {
     startLiveLogs(row.id)
   } else {
@@ -787,22 +821,44 @@ function bindScheduleResizeObserver() {
   _scheduleRo.observe(el)
 }
 
-let timer: ReturnType<typeof setInterval> | null = null
+let timer: ReturnType<typeof setTimeout> | null = null
+let pageVisible = true
+const TASKS_POLL_ACTIVE_MS = 5000
+const TASKS_POLL_IDLE_MS = 15000
+
+function tasksPollIntervalMs() {
+  const hasActive = tasks.value.some((t) => t.status === 'running' || t.status === 'queued')
+  return hasActive ? TASKS_POLL_ACTIVE_MS : TASKS_POLL_IDLE_MS
+}
 
 function stopAutoRefresh() {
   if (timer) {
-    clearInterval(timer)
+    clearTimeout(timer)
     timer = null
   }
 }
 
 function startAutoRefresh() {
   stopAutoRefresh()
-  if (!autoRefresh.value) return
-  timer = setInterval(() => {
-    void refresh()
-    void loadSchedules()
-  }, 5000)
+  if (!autoRefresh.value || !pageVisible) return
+  timer = setTimeout(() => {
+    void refresh({ silent: true })
+    void loadSchedules({ silent: true }).then(() => {
+      if (autoRefresh.value && pageVisible) startAutoRefresh()
+    })
+  }, tasksPollIntervalMs())
+}
+
+function onPageVisibility() {
+  if (!import.meta.client) return
+  pageVisible = document.visibilityState !== 'hidden'
+  if (pageVisible && autoRefresh.value) {
+    void refresh({ silent: true })
+    void loadSchedules({ silent: true })
+    startAutoRefresh()
+  } else {
+    stopAutoRefresh()
+  }
 }
 
 onMounted(async () => {
@@ -813,6 +869,8 @@ onMounted(async () => {
     // safari fallback
     if (_mqMobile.addEventListener) _mqMobile.addEventListener('change', onMq)
     else _mqMobile.addListener?.(onMq)
+    document.addEventListener('visibilitychange', onPageVisibility)
+    pageVisible = document.visibilityState !== 'hidden'
   }
   window.addEventListener('resize', updateTasksTableMaxHeight)
   updateDrawerSize()
@@ -854,6 +912,7 @@ onBeforeUnmount(() => {
   if (import.meta.client) {
     window.removeEventListener('resize', updateTasksTableMaxHeight)
     window.removeEventListener('resize', updateDrawerSize)
+    document.removeEventListener('visibilitychange', onPageVisibility)
     if (_mqMobile) {
       const onMq = () => syncMobileFlag()
       if (_mqMobile.removeEventListener) _mqMobile.removeEventListener('change', onMq)

@@ -39,6 +39,8 @@ export interface IDownloadHooks {
     success?: boolean
     phase?: string
     message?: string
+    /** 本地下载绝对路径（文档/目录） */
+    filePath?: string
   }) => void
   onLog?: (level: 'info' | 'warn' | 'error' | 'debug', message: string) => void
   signal?: AbortSignal

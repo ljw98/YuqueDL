@@ -224,7 +224,12 @@ async function callTool(
       })
     }
     case 'yuque_list_tasks': {
-      let tasks = listTasks().map(publicTask)
+      // 列表默认 lite（无全量 logs）；需要日志时传 includeLogs: true
+      const includeLogs =
+        args.includeLogs === true ||
+        args.includeLogs === 1 ||
+        String(args.includeLogs || '').toLowerCase() === 'true'
+      let tasks = listTasks().map((t) => publicTask(t, { includeLogs }))
       const status = String(args.status || '').trim()
       if (status) tasks = tasks.filter((t) => t.status === status)
       const limit = Math.min(100, Math.max(1, Number(args.limit || 20) || 20))
@@ -235,7 +240,7 @@ async function callTool(
       if (!id) throw createError({ statusCode: 400, statusMessage: '缺少 id' })
       const task = getTask(id)
       if (!task) throw createError({ statusCode: 404, statusMessage: '任务不存在' })
-      return textResult({ task: publicTask(task) })
+      return textResult({ task: publicTask(task, { includeLogs: true }) })
     }
     case 'yuque_create_task': {
       if (event) assertRateLimit(clientKey(event, 'mcp-create-task'), 10, 60_000)
