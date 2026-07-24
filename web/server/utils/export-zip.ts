@@ -15,13 +15,38 @@ import { createConcurrencyGate } from './rate-limit'
 
 export const exportGate = createConcurrencyGate('library-export', 1)
 
+/**
+ * Node rejects non-ASCII / control chars in header *values* for the legacy
+ * `filename="..."` token. Keep ASCII fallback there; put real name in
+ * RFC 5987 `filename*`.
+ */
 export function contentDisposition(filename: string) {
-  const encoded = encodeURIComponent(filename)
-  return `attachment; filename="${filename.replace(/"/g, '')}"; filename*=UTF-8''${encoded}`
+  const raw = String(filename || 'download.zip')
+  let asciiName = raw
+    .replace(/["\\\r\n]/g, '_')
+    .replace(/[^\x20-\x7E]+/g, '_')
+    .replace(/_+/g, '_')
+    .replace(/^[_.\s-]+|[_.\s-]+$/g, '')
+
+  // Fully non-ASCII book names strip to leftovers like "2026-07-24.zip".
+  // Ignore the ".zip" suffix when checking for Latin letters (extension alone
+  // must not count as a meaningful ASCII basename).
+  const asciiBase = asciiName.replace(/\.zip$/i, '')
+  if (!asciiName || asciiName === '.zip' || !/[A-Za-z]/.test(asciiBase)) {
+    const m = raw.match(/(\d{4}-\d{2}-\d{2})(?:\.zip)?$/i)
+    asciiName = m ? `book-${m[1]}.zip` : 'download.zip'
+  } else if (!/\.zip$/i.test(asciiName)) {
+    asciiName = `${asciiName}.zip`
+  }
+
+  const encoded = encodeURIComponent(raw)
+  return `attachment; filename="${asciiName}"; filename*=UTF-8''${encoded}`
 }
 
 export function exportZipName(bookName: string, date = new Date()) {
   const stamp = date.toISOString().slice(0, 10)
+  // Keep original book name for filename* / clients that parse it; header
+  // builder will ASCII-sanitize the legacy filename= token.
   return `${bookName}-${stamp}.zip`
 }
 

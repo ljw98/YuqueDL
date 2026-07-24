@@ -9,7 +9,7 @@ export default defineEventHandler(async () => {
   const running = tasks.filter((t) => t.status === 'running' || t.status === 'queued').length
   return {
     ok: true,
-    service: 'yuque-dl',
+    service: 'yuquedl',
     version: '1.0.0',
     maxConcurrency: Math.min(3, Math.max(1, Number(settings.maxConcurrency || 1))),
     stats: {

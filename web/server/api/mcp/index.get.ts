@@ -4,7 +4,7 @@
 export default defineEventHandler(() => {
   return {
     ok: true,
-    service: 'yuque-dl-mcp',
+    service: 'yuquedl-mcp',
     transport: 'http+jsonrpc',
     endpoint: '/api/mcp',
     protocolVersion: '2024-11-05',

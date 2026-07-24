@@ -136,7 +136,7 @@
                   <el-checkbox v-model="form.incremental" border>增量下载</el-checkbox>
                 </el-tooltip>
                 <el-tooltip content="在 Markdown 顶部生成目录" placement="top">
-                  <el-checkbox v-model="form.toc" border>生成 TOC</el-checkbox>
+                  <el-checkbox v-model="form.toc" border>生成目录</el-checkbox>
                 </el-tooltip>
                 <el-tooltip content="不在文末写入更新时间、原文链接等" placement="top">
                   <el-checkbox v-model="form.hideFooter" border>隐藏页脚</el-checkbox>

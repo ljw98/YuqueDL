@@ -8,7 +8,8 @@
     "generate": "nuxt generate",
     "preview": "nuxt preview --host 0.0.0.0 --port 8787",
     "postinstall": "nuxt prepare",
-    "test:unit": "node tests/security-basics.mjs && node tests/classify-error.mjs && node tests/task-options.mjs"
+    "test:unit": "node tests/security-basics.mjs && node tests/classify-error.mjs && node tests/task-options.mjs",
+    "test:smoke": "node tests/smoke.mjs"
   },
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.2",

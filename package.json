@@ -10,7 +10,8 @@
     "dev:web": "pnpm run build:core && pnpm --dir web dev --host 0.0.0.0 --port 8787",
     "start:web": "pnpm --dir web preview --host 0.0.0.0 --port 8787",
     "clean": "rm -rf dist types",
-    "test:web": "pnpm --dir web test:unit"
+    "test:web": "pnpm --dir web test:unit",
+    "test:smoke": "pnpm --dir web test:smoke"
   },
   "repository": {
     "type": "git",

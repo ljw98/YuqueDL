@@ -106,4 +106,31 @@ assert.equal(clampConcurrency(99), 3)
 assert.equal(clampConcurrency(0), 1)
 assert.equal(clampConcurrency(2), 2)
 
+/** Mirror server contentDisposition ASCII fallback (export ZIP headers). */
+function contentDisposition(filename) {
+  const raw = String(filename || 'download.zip')
+  let asciiName = raw
+    .replace(/["\\\r\n]/g, '_')
+    .replace(/[^\x20-\x7E]+/g, '_')
+    .replace(/_+/g, '_')
+    .replace(/^[_.\s-]+|[_.\s-]+$/g, '')
+  const asciiBase = asciiName.replace(/\.zip$/i, '')
+  if (!asciiName || asciiName === '.zip' || !/[A-Za-z]/.test(asciiBase)) {
+    const m = raw.match(/(\d{4}-\d{2}-\d{2})(?:\.zip)?$/i)
+    asciiName = m ? `book-${m[1]}.zip` : 'download.zip'
+  } else if (!/\.zip$/i.test(asciiName)) {
+    asciiName = `${asciiName}.zip`
+  }
+  const encoded = encodeURIComponent(raw)
+  return `attachment; filename="${asciiName}"; filename*=UTF-8''${encoded}`
+}
+const cdCn = contentDisposition('知识库-2026-07-23.zip')
+assert.match(cdCn, /^attachment; filename="[^"]+"; filename\*=UTF-8''/)
+assert.ok(!/[^\x20-\x7E]/.test(cdCn.split('filename*=')[0]))
+assert.ok(cdCn.includes("filename*=UTF-8''%E7%9F%A5%E8%AF%86%E5%BA%93-2026-07-23.zip"))
+assert.equal(
+  contentDisposition('NASBox-2026-07-23.zip'),
+  'attachment; filename="NASBox-2026-07-23.zip"; filename*=UTF-8\'\'NASBox-2026-07-23.zip',
+)
+
 console.log('extra validation tests passed')

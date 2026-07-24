@@ -56,9 +56,21 @@
 - 默认：检测到其他 `instance.lock` 仅告警
 - `YUQUE_DL_STRICT_SINGLE_INSTANCE=1`：其他进程仍存活则拒绝加载队列
 
+## 界面截图
+
+见仓库根 [README](../README.md)「界面预览」，文件位于 `docs/assets/screenshots/`：
+
+| 文件 | 页面 |
+|------|------|
+| `01-download.png` | 下载 |
+| `02-tasks.png` | 任务中心 |
+| `03-library.png` | 知识库 |
+| `04-api.png` | 接口 |
+| `05-settings.png` | 设置 |
+
 ## 相关文档
 
-- [根 README](../README.md) — 快速开始
+- [根 README](../README.md) — 快速开始与截图
 - [Web README](../web/README.md) — 控制台功能与 API 表
 - [Docker](./DOCKER.md) — 镜像与 compose 模板
 - [审计 2026-07-22](./AUDIT_2026-07-22.md)

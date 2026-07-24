@@ -17,7 +17,7 @@
 
 - 前端：Nuxt 3 + Vue 3 + Element Plus
 - 后端：Nitro + 进程内任务队列
-- Core：仓库根目录 `yuque-dl`（Rollup 构建）
+- Core：仓库根目录下载引擎 `src/`（Rollup 构建为 `dist/es`）
 
 ## 开发
 
@@ -33,14 +33,11 @@ pnpm build
 pnpm preview
 ```
 
-## 单测
+## 测试
 
 ```bash
-pnpm test:unit
-# 或
-node tests/security-basics.mjs
-node tests/classify-error.mjs
-node tests/task-options.mjs
+pnpm test:unit    # 安全 / 错误分类 / 任务选项
+pnpm test:smoke   # 对运行中的 8787 做接口冒烟（需先启动控制台）
 ```
 
 ## 主要 API
@@ -112,4 +109,3 @@ node tests/task-options.mjs
 - [docs/PROJECT.md](../docs/PROJECT.md)
 - [docs/AUDIT_2026-07-22.md](../docs/AUDIT_2026-07-22.md)
 - [docs/AUDIT_2026-07-23.md](../docs/AUDIT_2026-07-23.md)
-.md](../docs/AUDIT_2026-07-23.md)

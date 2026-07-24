@@ -24,14 +24,14 @@ interface JsonRpcRequest {
 }
 
 const SERVER_INFO = {
-  name: 'yuque-dl',
+  name: 'yuquedl',
   version: '1.0.0',
 }
 
 const TOOLS = [
   {
     name: 'yuque_status',
-    description: '获取 Yuque DL 服务状态、任务数与知识库数量',
+    description: '获取 YuqueDL 服务状态、任务数与知识库数量',
     inputSchema: {
       type: 'object',
       properties: {},
@@ -213,7 +213,7 @@ async function callTool(
       const tasks = listTasks().map(publicTask)
       const books = await listBooks()
       return textResult({
-        service: 'yuque-dl',
+        service: 'yuquedl',
         version: SERVER_INFO.version,
         maxConcurrency: Math.min(3, Math.max(1, Number(settings.maxConcurrency || 1))),
         stats: {
