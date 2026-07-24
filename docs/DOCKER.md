@@ -119,6 +119,15 @@ docker run --rm -p 8787:8787 -v yuquedl-data:/data \
   yuquedl:local
 ```
 
+## GitHub Actions
+
+| Workflow | 触发 | 行为 |
+|----------|------|------|
+| `Docker` | push `master` / tag `v*` / 手动 | 构建并推送 GHCR（PR 仅 build 不推） |
+| `CI` | push / PR `master` / 手动 | `pnpm --dir web test:unit` |
+
+当前镜像平台为 **linux/amd64**（常见 x86 NAS / 云主机）。若需 arm64，可在 `.github/workflows/docker.yml` 的 `platforms` 中扩展。
+
 ## 开发（非 Docker）
 
 ```bash
