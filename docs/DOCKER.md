@@ -7,8 +7,42 @@
 | `Dockerfile` | 多阶段构建 core + Nuxt，生产 Node 运行 |
 | `docker-compose.yml` | 单实例服务 + 数据卷 |
 | `.dockerignore` | 排除 node_modules / data / 调试产物 |
+| `.github/workflows/docker.yml` | Actions：构建并推送 GHCR 镜像 |
+| `.github/workflows/ci.yml` | Actions：单元测试 |
 
-## 快速启动
+## 预构建镜像（GHCR）
+
+GitHub Actions 会在推送 `master` / `v*` tag 时构建镜像并推送到：
+
+```text
+ghcr.io/ljw98/yuquedl:latest
+ghcr.io/ljw98/yuquedl:vX.Y.Z   # 打 tag 时
+ghcr.io/ljw98/yuquedl:sha-<短提交>
+```
+
+```bash
+docker pull ghcr.io/ljw98/yuquedl:latest
+
+docker run --rm -p 8787:8787 \
+  -v yuquedl-data:/data \
+  -e YUQUE_DL_DATA=/data \
+  -e YUQUE_DL_ACCESS_PASSWORD=your-password \
+  -e YUQUE_DL_SECRET=long-random-string \
+  ghcr.io/ljw98/yuquedl:latest
+```
+
+compose 也可改用预构建镜像（不必在 NAS 上 build）：
+
+```yaml
+services:
+  yuquedl:
+    image: ghcr.io/ljw98/yuquedl:latest
+    # 去掉 build: 段即可
+```
+
+> 首次推送后，若拉取 401/不可见：到 GitHub → Packages → `yuquedl` → Package settings 将可见性设为 **Public**（公开仓库的 package 默认有时仍是 private）。
+
+## 快速启动（本地 build）
 
 ```bash
 # 在仓库根目录

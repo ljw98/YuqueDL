@@ -55,12 +55,23 @@ pnpm run start:web
 
 ## Docker
 
+本地构建：
+
 ```bash
 docker compose up -d --build
 # http://localhost:8787/
 ```
 
-详见 [docs/DOCKER.md](./docs/DOCKER.md)。
+或直接拉取 GitHub Actions 构建的镜像（GHCR）：
+
+```bash
+docker pull ghcr.io/ljw98/yuquedl:latest
+docker run --rm -p 8787:8787 -v yuquedl-data:/data \
+  -e YUQUE_DL_DATA=/data \
+  ghcr.io/ljw98/yuquedl:latest
+```
+
+`master` 推送会构建并推送 `latest`；打 `v*` tag 会推送版本号镜像。详见 [docs/DOCKER.md](./docs/DOCKER.md)。
 
 ### 常用环境变量
 
