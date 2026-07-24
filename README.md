@@ -79,13 +79,13 @@ docker compose up -d --build
 ## 使用流程（简要）
 
 1. **（可选）设置访问密码** — 设置页 → 控制台安全  
-2. **私有库** — 设置页 / 下载页右侧粘贴语雀 `_yuque_session` Token  
+2. **私有库** — 设置页 / 下载页配置区粘贴语雀 `_yuque_session` Token  
 3. **下载** — 粘贴知识库 URL，选公开/私有与模式，点「开始下载」  
 4. **任务中心** — 查看进度、日志、取消/重试；可配置定时同步  
 5. **知识库** — 浏览本地 Markdown、导出 ZIP、删除  
 6. **接口** — 生成 API Token，对接 Open API / MCP  
 
-获取 Token 步骤见 [docs/GET_TOEKN.md](./docs/GET_TOEKN.md)。
+获取 Token 步骤见 [docs/GET_TOKEN.md](./docs/GET_TOKEN.md)。
 
 ## 项目结构
 
@@ -106,7 +106,7 @@ docker compose up -d --build
 - [web/README.md](./web/README.md) — 控制台功能与 API
 - [docs/PROJECT.md](./docs/PROJECT.md) — 架构与边界
 - [docs/DOCKER.md](./docs/DOCKER.md) — 容器部署
-- [docs/GET_TOEKN.md](./docs/GET_TOEKN.md) — 如何获取语雀 `_yuque_session`
+- [docs/GET_TOKEN.md](./docs/GET_TOKEN.md) — 如何获取语雀 `_yuque_session`
 - [docs/AUDIT_2026-07-23.md](./docs/AUDIT_2026-07-23.md) — 安全 / 冒烟审计
 
 ## 测试

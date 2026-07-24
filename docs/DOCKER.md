@@ -56,7 +56,7 @@ docker compose up -d --build
 
 1. **不要** `docker compose up --scale` 共享同一数据卷：任务队列是单实例。
 2. 反代 HTTPS 时：`YUQUE_DL_COOKIE_SECURE=1`，并视情况 `YUQUE_DL_TRUST_PROXY=1`。
-3. 首次进入设置页粘贴 `_yuque_session`（见 `docs/GET_TOEKN.md`）。
+3. 首次进入设置页粘贴 `_yuque_session`（见 `docs/GET_TOKEN.md`）。
 4. 导出大库依赖容器内 `zip` 命令（Dockerfile 已安装）；无 `zip` 时回退到 Node 流式 store ZIP。
 
 ## 仅构建镜像
