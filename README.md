@@ -127,5 +127,5 @@ node web/tests/smoke.mjs
 
 ## 许可与致谢
 
-- 本项目许可证：ISC  
+- 本项目许可证：[ISC](./LICENSE)  
 - 下载引擎源自 [gxr404/yuque-dl](https://github.com/gxr404/yuque-dl)（ISC），感谢原作者  

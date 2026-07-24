@@ -217,7 +217,7 @@ export async function loadJobsIntoMemory() {
     try {
       const prev = JSON.parse(await readFile(lockPath, 'utf8')) as { pid?: number }
       if (prev?.pid && prev.pid !== process.pid) {
-        const msg = `[yuque-dl-web] 检测到其他进程 instance.lock (pid=${prev.pid})。当前为单实例任务队列，请避免多进程同时写同一 data 目录。`
+        const msg = `[YuqueDL] 检测到其他进程 instance.lock (pid=${prev.pid})。当前为单实例任务队列，请避免多进程同时写同一 data 目录。`
         const strict = String(process.env.YUQUE_DL_STRICT_SINGLE_INSTANCE || '').trim() === '1'
         if (strict && isPidAlive(prev.pid)) {
           throw new Error(`${msg} （YUQUE_DL_STRICT_SINGLE_INSTANCE=1）`)
