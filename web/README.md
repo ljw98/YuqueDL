@@ -81,9 +81,10 @@ pnpm test:smoke   # 对运行中的 8787 做接口冒烟（需先启动控制台
 - 默认端口 **8787**
 - 任务队列**单实例**；多进程请拆分 `data` 目录
 - HTTPS：`YUQUE_DL_COOKIE_SECURE=1`
-- 数据目录：`YUQUE_DL_DATA`（Docker 见 `docs/DOCKER.md`）
+- 数据目录：`YUQUE_DL_DATA`（Docker 见 [`docs/DOCKER.md`](../docs/DOCKER.md)）
 - 严格单实例：`YUQUE_DL_STRICT_SINGLE_INSTANCE=1`
 - 反代后限流 IP：`YUQUE_DL_TRUST_PROXY=1`
+- 预构建镜像：`docker pull ghcr.io/ljw98/yuquedl:latest`（Actions 在 push `master` 时构建）
 
 ## 环境变量
 

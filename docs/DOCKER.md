@@ -12,13 +12,16 @@
 
 ## 预构建镜像（GHCR）
 
-GitHub Actions 会在推送 `master` / `v*` tag 时构建镜像并推送到：
+仓库公开；GitHub Actions（`.github/workflows/docker.yml`）在推送 `master` / 打 `v*` tag / 手动触发时构建并推送：
 
-```text
-ghcr.io/ljw98/yuquedl:latest
-ghcr.io/ljw98/yuquedl:vX.Y.Z   # 打 tag 时
-ghcr.io/ljw98/yuquedl:sha-<短提交>
-```
+| Tag | 说明 |
+|-----|------|
+| `ghcr.io/ljw98/yuquedl:latest` | `master` 最新构建 |
+| `ghcr.io/ljw98/yuquedl:vX.Y.Z` | 语义化版本（打 tag 时） |
+| `ghcr.io/ljw98/yuquedl:sha-<短提交>` | 对应 git commit |
+
+Package：https://github.com/users/ljw98/packages/container/package/yuquedl  
+Actions：https://github.com/ljw98/YuqueDL/actions  
 
 ```bash
 docker pull ghcr.io/ljw98/yuquedl:latest
@@ -31,16 +34,30 @@ docker run --rm -p 8787:8787 \
   ghcr.io/ljw98/yuquedl:latest
 ```
 
-compose 也可改用预构建镜像（不必在 NAS 上 build）：
+compose 也可改用预构建镜像（NAS / 飞牛不必本地 build）：
 
 ```yaml
 services:
   yuquedl:
     image: ghcr.io/ljw98/yuquedl:latest
-    # 去掉 build: 段即可
+    # 去掉 build: 段即可；其余 ports / environment / volumes 与仓库模板相同
+    container_name: yuquedl
+    restart: unless-stopped
+    ports:
+      - "8787:8787"
+    environment:
+      HOST: 0.0.0.0
+      PORT: 8787
+      NITRO_HOST: 0.0.0.0
+      NITRO_PORT: 8787
+      YUQUE_DL_DATA: /data
+      YUQUE_DL_ACCESS_PASSWORD: ${YUQUE_DL_ACCESS_PASSWORD:-}
+      YUQUE_DL_SECRET: ${YUQUE_DL_SECRET:-}
+    volumes:
+      - yuquedl-data:/data
 ```
 
-> 首次推送后，若拉取 401/不可见：到 GitHub → Packages → `yuquedl` → Package settings 将可见性设为 **Public**（公开仓库的 package 默认有时仍是 private）。
+> 镜像为 **public**。若拉取仍 401，检查是否误用了私有 registry 凭据，或到 Package 设置确认可见性。
 
 ## 快速启动（本地 build）
 

@@ -102,25 +102,28 @@ docker run --rm -p 8787:8787 -v yuquedl-data:/data \
 
 ```
 .
-├── src/              # 下载引擎（core，Web 通过 dist 动态加载）
-├── dist/es/          # rollup 构建产物
-├── server-lib/       # core 备用 bundle
-├── web/              # Nuxt 3 控制台（UI + Nitro API）
-├── data/             # 运行时数据（gitignore）
-├── docs/             # 文档与截图
+├── src/                 # 下载引擎（core，Web 通过 dist 动态加载）
+├── dist/es/             # rollup 构建产物
+├── server-lib/          # core 备用 bundle
+├── web/                 # Nuxt 3 控制台（UI + Nitro API）
+├── data/                # 运行时数据（gitignore）
+├── docs/                # 文档与截图
+├── .github/workflows/   # CI 单元测试 + Docker/GHCR 构建推送
 ├── Dockerfile
-└── docker-compose.yml
+├── docker-compose.yml
+├── LICENSE              # ISC
+└── NOTICE               # 上游下载引擎致谢
 ```
 
 ## 文档
 
 - [web/README.md](./web/README.md) — 控制台功能与 API
 - [docs/PROJECT.md](./docs/PROJECT.md) — 架构与边界
-- [docs/DOCKER.md](./docs/DOCKER.md) — 容器部署
+- [docs/DOCKER.md](./docs/DOCKER.md) — 容器部署 / GHCR 镜像
 - [docs/GET_TOKEN.md](./docs/GET_TOKEN.md) — 如何获取语雀 `_yuque_session`
 - [docs/AUDIT_2026-07-23.md](./docs/AUDIT_2026-07-23.md) — 安全 / 冒烟审计
 
-## 测试
+## 测试与 CI
 
 ```bash
 # 单元测试（安全 / 错误分类 / 任务选项）
@@ -129,6 +132,16 @@ pnpm --dir web test:unit
 # 对已启动的控制台做接口冒烟（需 8787 在跑）
 node web/tests/smoke.mjs
 ```
+
+GitHub Actions（推送 `master` / PR 自动跑）：
+
+| Workflow | 文件 | 作用 |
+|----------|------|------|
+| **CI** | `.github/workflows/ci.yml` | `pnpm --dir web test:unit` |
+| **Docker** | `.github/workflows/docker.yml` | 构建并推送 `ghcr.io/ljw98/yuquedl` |
+
+镜像包：https://github.com/users/ljw98/packages/container/package/yuquedl  
+Actions：https://github.com/ljw98/YuqueDL/actions  
 
 ## 私有知识库与 Token
 

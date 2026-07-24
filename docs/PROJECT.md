@@ -68,10 +68,21 @@
 | `04-api.png` | 接口 |
 | `05-settings.png` | 设置 |
 
+## 发布与 CI
+
+| 项 | 说明 |
+|----|------|
+| 仓库 | https://github.com/ljw98/YuqueDL （public） |
+| 单元 CI | `.github/workflows/ci.yml` → `pnpm --dir web test:unit` |
+| 镜像 CI | `.github/workflows/docker.yml` → `ghcr.io/ljw98/yuquedl` |
+| 预构建镜像 | `latest` / `sha-*` / 语义化 `v*` tag |
+| 许可 | ISC（`LICENSE`）；上游致谢见 `NOTICE` |
+
 ## 相关文档
 
 - [根 README](../README.md) — 快速开始与截图
 - [Web README](../web/README.md) — 控制台功能与 API 表
-- [Docker](./DOCKER.md) — 镜像与 compose 模板
+- [Docker](./DOCKER.md) — 本地 compose / GHCR 预构建镜像
+- [获取 Token](./GET_TOKEN.md) — 语雀 `_yuque_session`
 - [审计 2026-07-22](./AUDIT_2026-07-22.md)
 - [审计 2026-07-23](./AUDIT_2026-07-23.md)
